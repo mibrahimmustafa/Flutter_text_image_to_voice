@@ -25,15 +25,20 @@ class TtsService extends ChangeNotifier {
   List<Map<String, String>> _allVoices = [];
   List<Map<String, String>> _maleVoices = [];
   List<Map<String, String>> _femaleVoices = [];
+  List<Map<String, String>> _arabicVoices = [];
 
   List<Map<String, String>> get allVoices => _allVoices;
   List<Map<String, String>> get maleVoices => _maleVoices;
   List<Map<String, String>> get femaleVoices => _femaleVoices;
+  List<Map<String, String>> get arabicVoices => _arabicVoices;
 
   Map<String, String>? _selectedSystemVoice;
   Map<String, String>? get selectedSystemVoice => _selectedSystemVoice;
 
-  VoicePersona _currentPersona = VoicePersona.defaultPersonas[0];
+  bool _isArabicMode = false;
+  bool get isArabicMode => _isArabicMode;
+
+  VoicePersona _currentPersona = VoicePersona.englishPersonas[0];
   VoicePersona get currentPersona => _currentPersona;
 
   double _pitch = 0.70;
@@ -60,6 +65,23 @@ class TtsService extends ChangeNotifier {
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
+
+  static bool isArabicString(String text) {
+    return RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+  }
+
+  void setArabicMode(bool arabic) {
+    _isArabicMode = arabic;
+    if (_isArabicMode) {
+      _currentLanguage = 'ar-SA';
+      _currentPersona = VoicePersona.arabicPersonas[0];
+    } else {
+      _currentLanguage = 'en-US';
+      _currentPersona = VoicePersona.englishPersonas[0];
+    }
+    applyPersona(_currentPersona);
+    notifyListeners();
+  }
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -156,9 +178,10 @@ class TtsService extends ChangeNotifier {
           };
         }).toList();
 
-        // Categorize into Male and Female
+        // Categorize into Male, Female, and Arabic
         _maleVoices = [];
         _femaleVoices = [];
+        _arabicVoices = [];
 
         final femaleKeywords = [
           'female',
@@ -183,6 +206,11 @@ class TtsService extends ChangeNotifier {
           'laura',
           'maria',
           'anna',
+          'zeina',
+          'salma',
+          'hoda',
+          'laila',
+          'mariam',
           'en-us-x-sfg#female',
           'en-us-x-tpd#female',
           'en-us-x-iol#female',
@@ -203,14 +231,40 @@ class TtsService extends ChangeNotifier {
           'james',
           'john',
           'tom',
+          'tarik',
+          'maged',
+          'naayf',
           'en-us-x-sfg#male',
           'en-us-x-tpd#male',
           'en-us-x-iol#male',
         ];
 
+        final arabicKeywords = [
+          'ar',
+          'arabic',
+          'arab',
+          'ar-sa',
+          'ar-eg',
+          'ar-ae',
+          'tarik',
+          'maged',
+          'naayf',
+          'zeina',
+          'salma',
+          'hoda',
+          'laila',
+          'mariam',
+        ];
+
         for (var voice in _allVoices) {
           final nameLower = voice['name']!.toLowerCase();
+          final localeLower = voice['locale']!.toLowerCase();
           final genderLower = voice['gender']!.toLowerCase();
+
+          // Check if Arabic
+          if (arabicKeywords.any((k) => nameLower.contains(k) || localeLower.contains(k))) {
+            _arabicVoices.add(voice);
+          }
 
           bool isMale = genderLower.contains('male') && !genderLower.contains('female');
           bool isFemale = genderLower.contains('female');
@@ -228,59 +282,83 @@ class TtsService extends ChangeNotifier {
           } else if (isMale) {
             _maleVoices.add(voice);
           } else {
-            // Default fallback categorization based on common naming
             if (nameLower.contains('desktop') && !nameLower.contains('zira')) {
               _maleVoices.add(voice);
             }
           }
         }
 
-        debugPrint("TtsService: Loaded ${_allVoices.length} voices (${_maleVoices.length} male, ${_femaleVoices.length} female)");
+        debugPrint("TtsService: Loaded ${_allVoices.length} voices (${_maleVoices.length} male, ${_femaleVoices.length} female, ${_arabicVoices.length} arabic)");
       }
     } catch (e) {
       debugPrint("Error fetching voices: $e");
     }
   }
 
-  /// Sets one of the pre-tuned Voice Personas (Deep Male, Elegant Female, etc.)
+  /// Sets one of the pre-tuned Voice Personas
   Future<void> applyPersona(VoicePersona persona) async {
     _currentPersona = persona;
     _pitch = persona.pitch;
     _rate = persona.rate;
 
-    // Refresh voices if lists are currently empty
+    if (persona.language == PersonaLanguage.arabic) {
+      _currentLanguage = 'ar-SA';
+    } else {
+      _currentLanguage = 'en-US';
+    }
+
     if (_maleVoices.isEmpty && _femaleVoices.isEmpty) {
       await _loadAndCategorizeVoices();
     }
 
     Map<String, String>? bestMatch;
 
-    if (persona.gender == VoiceGender.female) {
-      if (_femaleVoices.isNotEmpty) {
-        for (var pref in persona.preferredSystemVoices) {
-          final match = _femaleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
-          if (match.isNotEmpty) {
-            bestMatch = match.first;
-            break;
-          }
-        }
-        bestMatch ??= _femaleVoices.first;
+    // Check Arabic voices first if persona is Arabic
+    if (persona.language == PersonaLanguage.arabic && _arabicVoices.isNotEmpty) {
+      if (persona.gender == VoiceGender.female) {
+        final fMatch = _arabicVoices.where((v) =>
+            v['name']!.toLowerCase().contains('female') ||
+            v['name']!.toLowerCase().contains('zeina') ||
+            v['name']!.toLowerCase().contains('salma') ||
+            v['name']!.toLowerCase().contains('hoda'));
+        bestMatch = fMatch.isNotEmpty ? fMatch.first : _arabicVoices.first;
+      } else {
+        final mMatch = _arabicVoices.where((v) =>
+            v['name']!.toLowerCase().contains('male') ||
+            v['name']!.toLowerCase().contains('tarik') ||
+            v['name']!.toLowerCase().contains('maged') ||
+            v['name']!.toLowerCase().contains('naayf'));
+        bestMatch = mMatch.isNotEmpty ? mMatch.first : _arabicVoices.first;
       }
-    } else if (persona.gender == VoiceGender.male) {
-      if (_maleVoices.isNotEmpty) {
-        for (var pref in persona.preferredSystemVoices) {
-          final match = _maleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
-          if (match.isNotEmpty) {
-            bestMatch = match.first;
-            break;
+    }
+
+    if (bestMatch == null) {
+      if (persona.gender == VoiceGender.female) {
+        if (_femaleVoices.isNotEmpty) {
+          for (var pref in persona.preferredSystemVoices) {
+            final match = _femaleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
+            if (match.isNotEmpty) {
+              bestMatch = match.first;
+              break;
+            }
           }
+          bestMatch ??= _femaleVoices.first;
         }
-        bestMatch ??= _maleVoices.first;
-      }
-    } else {
-      // Neutral / Robot
-      if (_allVoices.isNotEmpty) {
-        bestMatch = _allVoices.first;
+      } else if (persona.gender == VoiceGender.male) {
+        if (_maleVoices.isNotEmpty) {
+          for (var pref in persona.preferredSystemVoices) {
+            final match = _maleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
+            if (match.isNotEmpty) {
+              bestMatch = match.first;
+              break;
+            }
+          }
+          bestMatch ??= _maleVoices.first;
+        }
+      } else {
+        if (_allVoices.isNotEmpty) {
+          bestMatch = _allVoices.first;
+        }
       }
     }
 
@@ -296,6 +374,7 @@ class TtsService extends ChangeNotifier {
       }
     }
 
+    await _flutterTts.setLanguage(_currentLanguage);
     await _flutterTts.setPitch(_pitch);
     await _flutterTts.setSpeechRate(_rate);
     await _flutterTts.setVolume(_volume);
@@ -303,15 +382,13 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sets a specific system voice directly
   Future<void> setSystemVoice(Map<String, String> voice) async {
     _selectedSystemVoice = voice;
     final nameLower = voice['name']!.toLowerCase();
 
-    // Dynamically adjust pitch if male or female voice is chosen directly
-    if (nameLower.contains('zira') || nameLower.contains('female') || nameLower.contains('google us english')) {
+    if (nameLower.contains('zira') || nameLower.contains('female') || nameLower.contains('google us english') || nameLower.contains('zeina')) {
       _pitch = 1.38;
-    } else if (nameLower.contains('david') || nameLower.contains('male') || nameLower.contains('mark')) {
+    } else if (nameLower.contains('david') || nameLower.contains('male') || nameLower.contains('mark') || nameLower.contains('tarik')) {
       _pitch = 0.75;
     }
 
@@ -320,6 +397,10 @@ class TtsService extends ChangeNotifier {
         'name': voice['name']!,
         'locale': voice['locale']!,
       });
+      if (voice['locale'] != null && voice['locale']!.isNotEmpty) {
+        await _flutterTts.setLanguage(voice['locale']!);
+        _currentLanguage = voice['locale']!;
+      }
     } catch (e) {
       debugPrint("setSystemVoice error: $e");
     }
@@ -364,12 +445,20 @@ class TtsService extends ChangeNotifier {
       await _loadAndCategorizeVoices();
     }
 
-    // 3. Ensure active voice is selected
+    // 3. Detect Arabic text and set appropriate language
+    final hasArabic = isArabicString(text);
+    final targetLang = hasArabic ? 'ar-SA' : _currentLanguage;
+
+    try {
+      await _flutterTts.setLanguage(targetLang);
+    } catch (_) {}
+
+    // 4. Ensure active voice is selected
     if (_selectedSystemVoice == null) {
       await applyPersona(_currentPersona);
     }
 
-    // 4. Re-apply voice and acoustic parameters right before speaking
+    // 5. Apply voice and parameters
     if (_selectedSystemVoice != null) {
       try {
         await _flutterTts.setVoice({

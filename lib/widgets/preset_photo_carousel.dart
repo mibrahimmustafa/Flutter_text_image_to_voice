@@ -4,17 +4,20 @@ import '../models/preset_demo_photo.dart';
 class PresetPhotoCarousel extends StatelessWidget {
   final ValueChanged<PresetDemoPhoto> onSelect;
   final String? selectedPresetId;
+  final bool isArabic;
 
   const PresetPhotoCarousel({
     super.key,
     required this.onSelect,
     this.selectedPresetId,
+    this.isArabic = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final samples = PresetDemoPhoto.getSamples(isArabic);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,7 +32,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                   Icon(Icons.auto_awesome_rounded, size: 16, color: theme.colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(
-                    'Quick Test Samples',
+                    isArabic ? 'نماذج سريعة للاختبار' : 'Quick Test Samples',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -39,7 +42,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                 ],
               ),
               Text(
-                'Tap to test OCR & Voice',
+                isArabic ? 'اضغط لتجربة الصوت' : 'Tap to test OCR & Voice',
                 style: TextStyle(
                   fontSize: 11,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -53,10 +56,10 @@ class PresetPhotoCarousel extends StatelessWidget {
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: PresetDemoPhoto.samples.length,
+            itemCount: samples.length,
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final preset = PresetDemoPhoto.samples[index];
+              final preset = samples[index];
               final isSelected = selectedPresetId == preset.id;
 
               return InkWell(
@@ -113,7 +116,8 @@ class PresetPhotoCarousel extends StatelessWidget {
                         // Category Badge
                         Positioned(
                           top: 8,
-                          left: 8,
+                          left: isArabic ? null : 8,
+                          right: isArabic ? 8 : null,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
@@ -136,13 +140,14 @@ class PresetPhotoCarousel extends StatelessWidget {
                           left: 10,
                           right: 10,
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 preset.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -151,6 +156,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Row(
+                                mainAxisAlignment: isArabic ? MainAxisAlignment.end : MainAxisAlignment.start,
                                 children: [
                                   Icon(
                                     isSelected ? Icons.check_circle_rounded : Icons.play_arrow_rounded,
@@ -159,7 +165,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 3),
                                   Text(
-                                    isSelected ? 'Selected' : 'Tap to scan',
+                                    isSelected ? (isArabic ? 'تم الاختيار' : 'Selected') : (isArabic ? 'اضغط للفحص' : 'Tap to scan'),
                                     style: TextStyle(
                                       color: isSelected ? Colors.greenAccent : Colors.white70,
                                       fontSize: 10,

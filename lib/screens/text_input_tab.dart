@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../models/app_strings.dart';
 import '../models/voice_persona.dart';
 import '../services/tts_service.dart';
 import '../widgets/speed_scroll_selector.dart';
@@ -10,6 +11,7 @@ class TextInputTab extends StatefulWidget {
   final TtsService ttsService;
   final ValueChanged<String> onTextUpdated;
   final VoidCallback onTriggerSpeak;
+  final bool isArabic;
 
   const TextInputTab({
     super.key,
@@ -17,6 +19,7 @@ class TextInputTab extends StatefulWidget {
     required this.ttsService,
     required this.onTextUpdated,
     required this.onTriggerSpeak,
+    this.isArabic = false,
   });
 
   @override
@@ -24,7 +27,9 @@ class TextInputTab extends StatefulWidget {
 }
 
 class _TextInputTabState extends State<TextInputTab> {
-  final List<Map<String, String>> _samplePresets = [
+  AppStrings get strings => AppStrings(isArabic: widget.isArabic);
+
+  final List<Map<String, String>> _englishPresets = [
     {
       'title': '💡 Perseverance Quote',
       'text':
@@ -47,9 +52,38 @@ class _TextInputTabState extends State<TextInputTab> {
     },
   ];
 
+  final List<Map<String, String>> _arabicPresets = [
+    {
+      'title': '📜 حكمة عربية ملهمة',
+      'text':
+          'العلم يبني بيوتاً لا عماد لها، والجهل يهدم بيوت العز والشرف. لا تحسبن العلم ينفع وحده ما لم يتوج ربه بخلاق.',
+    },
+    {
+      'title': '🚀 ثورة الذكاء الاصطناعي',
+      'text':
+          'تطور تقنيات الذكاء الاصطناعي وتحويل النصوص العربية والصور إلى أصوات بشرية طبيعية يفتح آفاقاً واسعة لمستقبل التعليم والمعرفة والتواصل الإنساني.',
+    },
+    {
+      'title': '☕ إشراقة الصباح',
+      'text':
+          'تنفست الطبيعة في هذا الصباح المشرق بنسمات هادئة عليلة، وتفتحت أزهار الياسمين لتملأ الأفق بعبيرها الفواح وأمل يوم جديد مليء بالنجاح.',
+    },
+    {
+      'title': '👅 تحدي النطق السريع',
+      'text':
+          'خيط حرير على حيط خليل. وقبر حرب بمكان قفر، وليس قرب قبر حرب قبر. شمس تمشي وشمس مشمسة.',
+    },
+  ];
+
   void _applySample(String sampleText) {
     widget.textController.text = sampleText;
     widget.onTextUpdated(sampleText);
+
+    // If applied text is Arabic, auto-switch to Arabic voice if needed
+    if (TtsService.isArabicString(sampleText) && !widget.isArabic) {
+      widget.ttsService.applyPersona(VoicePersona.arabicPersonas[0]);
+    }
+
     setState(() {});
   }
 
@@ -58,6 +92,11 @@ class _TextInputTabState extends State<TextInputTab> {
     if (data?.text != null && data!.text!.isNotEmpty) {
       widget.textController.text = data.text!;
       widget.onTextUpdated(data.text!);
+
+      if (TtsService.isArabicString(data.text!)) {
+        widget.ttsService.applyPersona(VoicePersona.arabicPersonas[0]);
+      }
+
       setState(() {});
     }
   }
@@ -66,6 +105,8 @@ class _TextInputTabState extends State<TextInputTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isRtlText = TtsService.isArabicString(widget.textController.text) || widget.isArabic;
+    final presets = widget.isArabic ? _arabicPresets : _englishPresets;
 
     final wordCount = widget.textController.text.trim().isEmpty
         ? 0
@@ -86,7 +127,7 @@ class _TextInputTabState extends State<TextInputTab> {
                   Icon(Icons.bolt_rounded, size: 16, color: theme.colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(
-                    'Instant Sample Texts',
+                    strings.instantSampleTexts,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -99,7 +140,7 @@ class _TextInputTabState extends State<TextInputTab> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: _samplePresets.map((preset) {
+                  children: presets.map((preset) {
                     final isCurrent = widget.textController.text == preset['text'];
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
@@ -156,7 +197,7 @@ class _TextInputTabState extends State<TextInputTab> {
                         Icon(Icons.edit_note_rounded, size: 20, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
                         Text(
-                          'Text to Speak',
+                          strings.textToSpeak,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -173,7 +214,7 @@ class _TextInputTabState extends State<TextInputTab> {
                           onPressed: _pasteFromClipboard,
                         ),
                         IconButton(
-                          tooltip: 'Clear text',
+                          tooltip: strings.clear,
                           icon: const Icon(Icons.clear_all_rounded, size: 18),
                           onPressed: () {
                             widget.textController.clear();
@@ -192,13 +233,14 @@ class _TextInputTabState extends State<TextInputTab> {
                   controller: widget.textController,
                   maxLines: 8,
                   minLines: 4,
+                  textDirection: isRtlText ? TextDirection.rtl : TextDirection.ltr,
                   onChanged: (val) {
                     widget.onTextUpdated(val);
                     setState(() {});
                   },
-                  style: const TextStyle(fontSize: 15, height: 1.5),
+                  style: const TextStyle(fontSize: 15, height: 1.6),
                   decoration: InputDecoration(
-                    hintText: 'Type, paste, or pick any sample text here to hear it with men or women voices...',
+                    hintText: strings.textInputHint,
                     hintStyle: TextStyle(
                       fontSize: 13,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
@@ -216,12 +258,12 @@ class _TextInputTabState extends State<TextInputTab> {
                 ),
                 const SizedBox(height: 12),
 
-                // Stats Bar: Words, Chars, Read Time
+                // Stats Bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$wordCount words • ${widget.textController.text.length} chars',
+                      '$wordCount ${widget.isArabic ? "كلمة" : "words"} • ${widget.textController.text.length} ${widget.isArabic ? "حرف" : "chars"}',
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -236,7 +278,7 @@ class _TextInputTabState extends State<TextInputTab> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '~${readingTimeSeconds}s audio',
+                          '~$readingTimeSeconds${widget.isArabic ? "ث تسجيل" : "s audio"}',
                           style: TextStyle(
                             fontSize: 11,
                             color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -260,6 +302,7 @@ class _TextInputTabState extends State<TextInputTab> {
             currentRate: widget.ttsService.rate,
             accentColor: widget.ttsService.currentPersona.accentColor,
             showSlider: true,
+            isArabic: widget.isArabic,
             onRateChanged: (v) {
               widget.ttsService.setRate(v);
               setState(() {});
@@ -278,8 +321,15 @@ class _TextInputTabState extends State<TextInputTab> {
               ),
               label: Text(
                 widget.ttsService.isPlaying
-                    ? 'Pause Playback'
-                    : 'Speak Now with ${widget.ttsService.currentPersona.name} (${widget.ttsService.currentPersona.gender == VoiceGender.male ? "Man" : "Woman"})',
+                    ? strings.pausePlayback
+                    : strings.speakNowButton(
+                        widget.isArabic
+                            ? widget.ttsService.currentPersona.nameArabic
+                            : widget.ttsService.currentPersona.name,
+                        widget.ttsService.currentPersona.gender == VoiceGender.male
+                            ? strings.man
+                            : strings.woman,
+                      ),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               style: ElevatedButton.styleFrom(
@@ -291,7 +341,7 @@ class _TextInputTabState extends State<TextInputTab> {
               ),
             ),
           ),
-          const SizedBox(height: 100), // Bottom padding for player bar
+          const SizedBox(height: 100),
         ],
       ),
     );
@@ -299,6 +349,7 @@ class _TextInputTabState extends State<TextInputTab> {
 
   Widget _buildVoicePersonaSelector(BuildContext context) {
     final theme = Theme.of(context);
+    final personas = widget.isArabic ? VoicePersona.arabicPersonas : VoicePersona.englishPersonas;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +362,7 @@ class _TextInputTabState extends State<TextInputTab> {
                 Icon(Icons.spatial_audio_rounded, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 6),
                 Text(
-                  'Select Voice (Multiple Men & Women)',
+                  strings.selectVoiceTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -321,7 +372,7 @@ class _TextInputTabState extends State<TextInputTab> {
               ],
             ),
             Text(
-              '${VoicePersona.defaultPersonas.length} styles available',
+              '${personas.length} ${strings.stylesAvailable}',
               style: TextStyle(
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -334,21 +385,29 @@ class _TextInputTabState extends State<TextInputTab> {
           height: 168,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: VoicePersona.defaultPersonas.length,
+            itemCount: personas.length,
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final persona = VoicePersona.defaultPersonas[index];
+              final persona = personas[index];
               final isSelected = widget.ttsService.currentPersona.id == persona.id;
 
               return VoicePersonaCard(
                 persona: persona,
                 isSelected: isSelected,
+                isArabic: widget.isArabic,
                 onSelect: () => widget.ttsService.applyPersona(persona),
                 onPreview: () async {
                   await widget.ttsService.applyPersona(persona);
-                  final previewText = persona.gender == VoiceGender.male
-                      ? "Hi, I'm ${persona.name}. Ready to speak your text with a masculine tone."
-                      : "Hello, I am ${persona.name}. Ready to read your text with an expressive feminine voice.";
+                  String previewText;
+                  if (widget.isArabic) {
+                    previewText = persona.gender == VoiceGender.male
+                        ? "مرحباً، أنا ${persona.nameArabic}. جاهز لقراءة نصوصك بصوت رجالي عربي."
+                        : "أهلاً، أنا ${persona.nameArabic}. جاهزة لنطق كتاباتك بصوت نسائي عربي فصيح.";
+                  } else {
+                    previewText = persona.gender == VoiceGender.male
+                        ? "Hi, I'm ${persona.name}. Ready to speak your text with a masculine tone."
+                        : "Hello, I am ${persona.name}. Ready to read your text with an expressive feminine voice.";
+                  }
                   await widget.ttsService.speak(previewText);
                 },
               );

@@ -10,12 +10,14 @@ class VoicePlayerBar extends StatefulWidget {
   final TtsService ttsService;
   final String textToSpeak;
   final VoidCallback? onSpeakRequested;
+  final bool isArabic;
 
   const VoicePlayerBar({
     super.key,
     required this.ttsService,
     required this.textToSpeak,
     this.onSpeakRequested,
+    this.isArabic = false,
   });
 
   @override
@@ -31,6 +33,14 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final persona = widget.ttsService.currentPersona;
+
+    final displayName = widget.ttsService.selectedSystemVoice?['name'] ??
+        (widget.isArabic ? persona.nameArabic : persona.name);
+    final displayTag = widget.isArabic ? persona.tagArabic : persona.tag;
+    final tapToChangeText = widget.isArabic ? 'اضغط للتغيير' : 'Tap to change';
+    final sayItText = widget.ttsService.isPlaying
+        ? (widget.isArabic ? 'إيقاف مؤقت' : 'Pause')
+        : (widget.isArabic ? 'انطق' : 'Say It');
 
     return Container(
       decoration: BoxDecoration(
@@ -57,6 +67,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                   currentRate: widget.ttsService.rate,
                   accentColor: persona.accentColor,
                   showSlider: true,
+                  isArabic: widget.isArabic,
                   onRateChanged: (v) => widget.ttsService.setRate(v),
                 ),
                 const SizedBox(height: 10),
@@ -90,7 +101,9 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       Icon(Icons.record_voice_over_rounded, size: 14, color: persona.accentColor),
                       const SizedBox(width: 6),
                       Text(
-                        'Speaking: "${widget.ttsService.currentSpokenWord}"',
+                        widget.isArabic
+                            ? 'يتم نطق: "${widget.ttsService.currentSpokenWord}"'
+                            : 'Speaking: "${widget.ttsService.currentSpokenWord}"',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -152,7 +165,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                                     children: [
                                       Flexible(
                                         child: Text(
-                                          widget.ttsService.selectedSystemVoice?['name'] ?? persona.name,
+                                          displayName,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
@@ -173,7 +186,9 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                                     ],
                                   ),
                                   Text(
-                                    '${persona.tag} • Tap to change',
+                                    '$displayTag • $tapToChangeText',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
@@ -192,6 +207,8 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+
                   // Speed Scroll Toggle Button
                   InkWell(
                     onTap: () {
@@ -199,7 +216,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
                       decoration: BoxDecoration(
                         color: _showSpeedScroll
                             ? persona.accentColor.withValues(alpha: 0.18)
@@ -231,11 +248,11 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
 
                   // Fine tune toggle button
                   IconButton(
-                    tooltip: 'Adjust Pitch & Speed',
+                    tooltip: widget.isArabic ? 'ضبط النبرة والسرعة' : 'Adjust Pitch & Speed',
                     icon: Icon(
                       Icons.tune_rounded,
                       color: _showFineTuning ? theme.colorScheme.primary : theme.colorScheme.onSurface,
@@ -249,19 +266,19 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       setState(() => _showFineTuning = !_showFineTuning);
                     },
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 6),
 
                   // Stop button (if playing or paused)
                   if (widget.ttsService.isPlaying || widget.ttsService.isPaused) ...[
                     IconButton(
-                      tooltip: 'Stop',
+                      tooltip: widget.isArabic ? 'إيقاف' : 'Stop',
                       icon: const Icon(Icons.stop_rounded, color: Colors.redAccent),
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.redAccent.withValues(alpha: 0.15),
                       ),
                       onPressed: () => widget.ttsService.stop(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                   ],
 
                   // Play / Pause Master FAB
@@ -279,7 +296,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -303,15 +320,15 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                                 ? Icons.pause_rounded
                                 : Icons.play_arrow_rounded,
                             color: Colors.white,
-                            size: 22,
+                            size: 20,
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           Text(
-                            widget.ttsService.isPlaying ? 'Pause' : 'Say It',
+                            sayItText,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ],

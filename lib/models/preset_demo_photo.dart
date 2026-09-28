@@ -4,6 +4,7 @@ class PresetDemoPhoto {
   final String category;
   final String imageUrl;
   final String extractedText;
+  final bool isArabic;
 
   const PresetDemoPhoto({
     required this.id,
@@ -11,9 +12,10 @@ class PresetDemoPhoto {
     required this.category,
     required this.imageUrl,
     required this.extractedText,
+    this.isArabic = false,
   });
 
-  static const List<PresetDemoPhoto> samples = [
+  static const List<PresetDemoPhoto> englishSamples = [
     PresetDemoPhoto(
       id: 'book_quote',
       title: 'Classic Literature Excerpt',
@@ -47,4 +49,47 @@ class PresetDemoPhoto {
           'Breakthrough in neural voice synthesis allows real-time text-to-speech conversion from any visual document with human-level natural prosody and emotional cadence.',
     ),
   ];
+
+  static const List<PresetDemoPhoto> arabicSamples = [
+    PresetDemoPhoto(
+      id: 'ar_wisdom',
+      title: 'حكمة شعرية ملهمة',
+      category: 'شعر عربي',
+      imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
+      extractedText:
+          'وما نيل المطالب بالتمني، ولكن تؤخذ الدنيا غلابا. وما استعصى على قوم منال، إذا الإقدام كان لهم ركابا. كن جميلاً تر الوجود جميلا.',
+      isArabic: true,
+    ),
+    PresetDemoPhoto(
+      id: 'ar_motivation',
+      title: 'لوحة تحفيز وتفاؤل',
+      category: 'إشراقة أمل',
+      imageUrl: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&auto=format&fit=crop&q=80',
+      extractedText:
+          'المستقبل ملك لأولئك الذين يؤمنون بجمال أحلامهم. ابدأ يومك بقلب شاكر، واعمل بشغف لا يلين، ولا تستسلم أبداً أمام التحديات، فالقادم أجمل دائماً بإذن الله.',
+      isArabic: true,
+    ),
+    PresetDemoPhoto(
+      id: 'ar_cafe',
+      title: 'قائمة المقهى العربي',
+      category: 'مقهى أصيل',
+      imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&auto=format&fit=crop&q=80',
+      extractedText:
+          'المشروب الخاص اليوم: قهوة عربية شقراء بالهيل والزعفران، تُقدم مع تمر خلاص فاخر وحلوى السمسم الطازجة. أهلاً وسهلاً بكم في مقهانا الأصيل.',
+      isArabic: true,
+    ),
+    PresetDemoPhoto(
+      id: 'ar_tech',
+      title: 'ثورة الذكاء الاصطناعي',
+      category: 'تقنية المستقبل',
+      imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80',
+      extractedText:
+          'إنجاز جديد في تقنيات الذكاء الاصطناعي يتيح تحويل المستندات المصورة والنصوص العربية إلى أصوات بشرية طبيعية بنبرات رجالية ونسائية عالية الدقة والفصاحة.',
+      isArabic: true,
+    ),
+  ];
+
+  static List<PresetDemoPhoto> getSamples(bool isArabic) {
+    return isArabic ? arabicSamples : englishSamples;
+  }
 }

@@ -4,6 +4,7 @@ import '../models/voice_persona.dart';
 class VoicePersonaCard extends StatelessWidget {
   final VoicePersona persona;
   final bool isSelected;
+  final bool isArabic;
   final VoidCallback onSelect;
   final VoidCallback onPreview;
 
@@ -11,6 +12,7 @@ class VoicePersonaCard extends StatelessWidget {
     super.key,
     required this.persona,
     required this.isSelected,
+    this.isArabic = false,
     required this.onSelect,
     required this.onPreview,
   });
@@ -21,9 +23,9 @@ class VoicePersonaCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final genderLabel = switch (persona.gender) {
-      VoiceGender.male => '👨 Man',
-      VoiceGender.female => '👩 Woman',
-      VoiceGender.neutral => '🤖 Synth',
+      VoiceGender.male => isArabic ? '👨 رجل' : '👨 Man',
+      VoiceGender.female => isArabic ? '👩 امرأة' : '👩 Woman',
+      VoiceGender.neutral => isArabic ? '🤖 آلي' : '🤖 Synth',
     };
 
     final genderBgColor = switch (persona.gender) {
@@ -37,6 +39,10 @@ class VoicePersonaCard extends StatelessWidget {
       VoiceGender.female => Colors.pink.shade400,
       VoiceGender.neutral => const Color(0xFF10B981),
     };
+
+    final displayName = isArabic ? persona.nameArabic : persona.name;
+    final displayTag = isArabic ? persona.tagArabic : persona.tag;
+    final previewText = isArabic ? 'معاينة' : 'Preview';
 
     return InkWell(
       onTap: onSelect,
@@ -114,7 +120,7 @@ class VoicePersonaCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  persona.name,
+                  displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -124,7 +130,7 @@ class VoicePersonaCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  persona.tag,
+                  displayTag,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -158,7 +164,7 @@ class VoicePersonaCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Preview',
+                      previewText,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -175,4 +181,3 @@ class VoicePersonaCard extends StatelessWidget {
     );
   }
 }
-

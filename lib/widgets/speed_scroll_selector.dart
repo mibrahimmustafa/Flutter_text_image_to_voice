@@ -32,6 +32,7 @@ class SpeedScrollSelector extends StatelessWidget {
   final ValueChanged<double> onRateChanged;
   final Color accentColor;
   final bool showSlider;
+  final bool isArabic;
 
   const SpeedScrollSelector({
     super.key,
@@ -39,6 +40,7 @@ class SpeedScrollSelector extends StatelessWidget {
     required this.onRateChanged,
     this.accentColor = const Color(0xFF6366F1),
     this.showSlider = true,
+    this.isArabic = false,
   });
 
   @override
@@ -59,7 +61,7 @@ class SpeedScrollSelector extends StatelessWidget {
                 Icon(Icons.speed_rounded, size: 16, color: accentColor),
                 const SizedBox(width: 6),
                 Text(
-                  'Voice Speed Scroll',
+                  isArabic ? 'سرعة النطق' : 'Voice Speed Scroll',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -75,7 +77,7 @@ class SpeedScrollSelector extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '${currentRate.toStringAsFixed(2)}x Speed',
+                '${currentRate.toStringAsFixed(2)}x ${isArabic ? "سرعة" : "Speed"}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,

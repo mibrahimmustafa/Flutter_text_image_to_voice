@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import '../models/app_strings.dart';
 import '../models/preset_demo_photo.dart';
 import '../models/voice_persona.dart';
 import '../services/ocr_service.dart';
@@ -17,6 +18,7 @@ class PhotoOcrTab extends StatefulWidget {
   final TtsService ttsService;
   final ValueChanged<String> onTextUpdated;
   final VoidCallback onTriggerSpeak;
+  final bool isArabic;
 
   const PhotoOcrTab({
     super.key,
@@ -24,6 +26,7 @@ class PhotoOcrTab extends StatefulWidget {
     required this.ttsService,
     required this.onTextUpdated,
     required this.onTriggerSpeak,
+    this.isArabic = false,
   });
 
   @override
@@ -39,6 +42,8 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
   String? _selectedPresetId;
   bool _isProcessingOcr = false;
   Duration? _lastOcrDuration;
+
+  AppStrings get strings => AppStrings(isArabic: widget.isArabic);
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -98,7 +103,6 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
     });
 
     try {
-      // Fetch image bytes for preview
       final response = await http.get(Uri.parse(preset.imageUrl)).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         setState(() {
@@ -109,9 +113,13 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
       debugPrint("Failed to load preset image: $e");
     }
 
-    // Apply the accurate sample text
     widget.textController.text = preset.extractedText;
     widget.onTextUpdated(preset.extractedText);
+
+    // If preset is Arabic, auto-switch to Arabic voice if needed
+    if (preset.isArabic && !widget.isArabic) {
+      widget.ttsService.applyPersona(VoicePersona.arabicPersonas[0]);
+    }
 
     setState(() {
       _isProcessingOcr = false;
@@ -135,6 +143,12 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
       if (result.isSuccess && result.text.isNotEmpty) {
         widget.textController.text = result.text;
         widget.onTextUpdated(result.text);
+
+        // Auto-select Arabic voice if detected text is Arabic
+        if (TtsService.isArabicString(result.text)) {
+          widget.ttsService.applyPersona(VoicePersona.arabicPersonas[0]);
+        }
+
         setState(() {
           _lastOcrDuration = result.processingTime;
         });
@@ -165,6 +179,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isRtlText = TtsService.isArabicString(widget.textController.text) || widget.isArabic;
     final wordCount = widget.textController.text.trim().isEmpty
         ? 0
         : widget.textController.text.trim().split(RegExp(r'\s+')).length;
@@ -180,8 +195,8 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
               Expanded(
                 child: _buildActionButton(
                   context: context,
-                  label: 'Take Photo',
-                  subtitle: 'Use Camera',
+                  label: strings.takePhoto,
+                  subtitle: strings.useCamera,
                   icon: Icons.camera_alt_rounded,
                   color: const Color(0xFF6366F1),
                   onTap: () => _pickImage(ImageSource.camera),
@@ -191,31 +206,29 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
               Expanded(
                 child: _buildActionButton(
                   context: context,
-                  label: 'Choose Photo',
-                  subtitle: 'From Gallery',
+                  label: strings.choosePhoto,
+                  subtitle: strings.fromGallery,
                   icon: Icons.photo_library_rounded,
                   color: const Color(0xFFEC4899),
                   onTap: () => _pickImage(ImageSource.gallery),
                 ),
               ),
-              if (kIsWeb || !kIsWeb) ...[
-                const SizedBox(width: 12),
-                InkWell(
-                  onTap: _pickFromFilePicker,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E2433) : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
-                      ),
+              const SizedBox(width: 12),
+              InkWell(
+                onTap: _pickFromFilePicker,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2433) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
                     ),
-                    child: const Icon(Icons.folder_open_rounded, size: 24),
                   ),
+                  child: const Icon(Icons.folder_open_rounded, size: 24),
                 ),
-              ],
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -223,6 +236,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
           // Preset demo carousel for 1-tap testing
           PresetPhotoCarousel(
             selectedPresetId: _selectedPresetId,
+            isArabic: widget.isArabic,
             onSelect: _loadPreset,
           ),
           const SizedBox(height: 20),
@@ -254,7 +268,6 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
-                    // Header bar on image
                     Positioned(
                       top: 10,
                       left: 10,
@@ -273,7 +286,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                                 const Icon(Icons.check_circle_rounded, size: 14, color: Colors.greenAccent),
                                 const SizedBox(width: 5),
                                 Text(
-                                  _selectedImageName ?? 'Captured Photo',
+                                  _selectedImageName ?? (widget.isArabic ? 'الصورة الملتقطة' : 'Captured Photo'),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -298,20 +311,19 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                         ],
                       ),
                     ),
-                    // OCR Processing overlay
                     if (_isProcessingOcr)
                       Positioned.fill(
                         child: Container(
                           color: Colors.black.withValues(alpha: 0.6),
-                          child: const Center(
+                          child: Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                CircularProgressIndicator(color: Colors.white),
-                                SizedBox(height: 12),
+                                const CircularProgressIndicator(color: Colors.white),
+                                const SizedBox(height: 12),
                                 Text(
-                                  'Extracting text from photo...',
-                                  style: TextStyle(
+                                  strings.extractingText,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -329,7 +341,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
             const SizedBox(height: 18),
           ],
 
-          // Voice Personas Selector ("multiple sounds man and women")
+          // Voice Personas Selector
           _buildVoicePersonaSelector(context),
           const SizedBox(height: 20),
 
@@ -353,7 +365,6 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with word count and stats
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -362,7 +373,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                         Icon(Icons.text_fields_rounded, size: 18, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
                         Text(
-                          'Recognized Text',
+                          strings.recognizedText,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -392,7 +403,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     Row(
                       children: [
                         Text(
-                          '$wordCount words • ${widget.textController.text.length} chars',
+                          '$wordCount ${widget.isArabic ? "كلمة" : "words"} • ${widget.textController.text.length} ${widget.isArabic ? "حرف" : "chars"}',
                           style: TextStyle(
                             fontSize: 11,
                             color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
@@ -401,15 +412,15 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                         const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.copy_rounded, size: 16),
-                          tooltip: 'Copy text',
+                          tooltip: strings.copy,
                           visualDensity: VisualDensity.compact,
                           onPressed: () {
                             if (widget.textController.text.isNotEmpty) {
                               Clipboard.setData(ClipboardData(text: widget.textController.text));
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Copied text to clipboard!'),
-                                  duration: Duration(seconds: 1),
+                                SnackBar(
+                                  content: Text(strings.copied),
+                                  duration: const Duration(seconds: 1),
                                 ),
                               );
                             }
@@ -426,13 +437,14 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   controller: widget.textController,
                   maxLines: 6,
                   minLines: 3,
+                  textDirection: isRtlText ? TextDirection.rtl : TextDirection.ltr,
                   onChanged: (val) {
                     widget.onTextUpdated(val);
                     setState(() {});
                   },
-                  style: const TextStyle(fontSize: 14, height: 1.45),
+                  style: const TextStyle(fontSize: 14, height: 1.55),
                   decoration: InputDecoration(
-                    hintText: 'Recognized text from photo appears here. You can also edit, paste, or type directly...',
+                    hintText: strings.ocrHint,
                     hintStyle: TextStyle(
                       fontSize: 13,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
@@ -455,6 +467,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   currentRate: widget.ttsService.rate,
                   accentColor: widget.ttsService.currentPersona.accentColor,
                   showSlider: true,
+                  isArabic: widget.isArabic,
                   onRateChanged: (v) {
                     widget.ttsService.setRate(v);
                     setState(() {});
@@ -473,8 +486,15 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     ),
                     label: Text(
                       widget.ttsService.isPlaying
-                          ? 'Pause Playback'
-                          : 'Speak Extracted Text with ${widget.ttsService.currentPersona.name} (${widget.ttsService.currentPersona.gender == VoiceGender.male ? "Man" : "Woman"})',
+                          ? strings.pausePlayback
+                          : strings.speakExtractedButton(
+                              widget.isArabic
+                                  ? widget.ttsService.currentPersona.nameArabic
+                                  : widget.ttsService.currentPersona.name,
+                              widget.ttsService.currentPersona.gender == VoiceGender.male
+                                  ? strings.man
+                                  : strings.woman,
+                            ),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -489,7 +509,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
               ],
             ),
           ),
-          const SizedBox(height: 100), // Bottom padding for sticky player
+          const SizedBox(height: 100),
         ],
       ),
     );
@@ -497,6 +517,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
 
   Widget _buildVoicePersonaSelector(BuildContext context) {
     final theme = Theme.of(context);
+    final personas = widget.isArabic ? VoicePersona.arabicPersonas : VoicePersona.englishPersonas;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +530,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                 Icon(Icons.spatial_audio_rounded, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 6),
                 Text(
-                  'Select Voice (Multiple Men & Women)',
+                  strings.selectVoiceTitle,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -519,7 +540,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
               ],
             ),
             Text(
-              '${VoicePersona.defaultPersonas.length} styles available',
+              '${personas.length} ${strings.stylesAvailable}',
               style: TextStyle(
                 fontSize: 11,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -532,21 +553,29 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
           height: 168,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: VoicePersona.defaultPersonas.length,
+            itemCount: personas.length,
             separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final persona = VoicePersona.defaultPersonas[index];
+              final persona = personas[index];
               final isSelected = widget.ttsService.currentPersona.id == persona.id;
 
               return VoicePersonaCard(
                 persona: persona,
                 isSelected: isSelected,
+                isArabic: widget.isArabic,
                 onSelect: () => widget.ttsService.applyPersona(persona),
                 onPreview: () async {
                   await widget.ttsService.applyPersona(persona);
-                  final previewText = persona.gender == VoiceGender.male
-                      ? "Hi, I'm ${persona.name}. I will read your photo text with a masculine voice."
-                      : "Hello, I am ${persona.name}. I will speak your photo text with an elegant feminine voice.";
+                  String previewText;
+                  if (widget.isArabic) {
+                    previewText = persona.gender == VoiceGender.male
+                        ? "مرحباً، أنا ${persona.nameArabic}. سأقرأ لك النص بصوت رجالي عربي وقور."
+                        : "أهلاً بك، أنا ${persona.nameArabic}. سأقوم بنطق نصوصك بصوت نسائي عربي فصيح.";
+                  } else {
+                    previewText = persona.gender == VoiceGender.male
+                        ? "Hi, I'm ${persona.name}. I will read your text with a masculine voice."
+                        : "Hello, I am ${persona.name}. I will speak your text with an elegant feminine voice.";
+                  }
                   await widget.ttsService.speak(previewText);
                 },
               );
@@ -606,6 +635,8 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                 children: [
                   Text(
                     label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -614,6 +645,8 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   ),
                   Text(
                     subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 10,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
