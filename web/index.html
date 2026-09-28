@@ -29,9 +29,11 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <meta name="referrer" content="no-referrer">
   <title>vocal_lens</title>
   <link rel="manifest" href="manifest.json">
 </head>
+<body>
   <!-- VocalLens High-Fidelity Audio Bridge (Google Neural Cloud Fallback for Arabic) -->
   <script>
     window.vocalLensAudio = {
@@ -63,7 +65,7 @@
           return;
         }
 
-        // Split text into chunks of <= 120 chars, breaking at sentences or spaces
+        // Split text into chunks of <= 140 chars, breaking at sentences or spaces
         const rawChunks = text.split(/([.،؛؟!\n]+)/);
         const chunks = [];
         let current = '';
@@ -71,18 +73,17 @@
         for (let i = 0; i < rawChunks.length; i++) {
           const piece = rawChunks[i].trim();
           if (!piece) continue;
-          if ((current + ' ' + piece).length <= 120) {
+          if ((current + ' ' + piece).length <= 140) {
             current = current ? (current + ' ' + piece) : piece;
           } else {
             if (current) chunks.push(current);
-            if (piece.length <= 120) {
+            if (piece.length <= 140) {
               current = piece;
             } else {
-              // Split long sentence by words
               const words = piece.split(/\s+/);
               let sub = '';
               for (const w of words) {
-                if ((sub + ' ' + w).length <= 120) {
+                if ((sub + ' ' + w).length <= 140) {
                   sub = sub ? (sub + ' ' + w) : w;
                 } else {
                   if (sub) chunks.push(sub);
@@ -120,7 +121,7 @@
         if (!this.audioElement) {
           this.audioElement = new Audio();
         }
-
+        this.audioElement.referrerPolicy = "no-referrer";
         this.audioElement.src = url;
 
         // Apply gender cadence: male is deeper/deliberate, female is brisk, AI is fast
@@ -153,17 +154,64 @@
         };
 
         this.audioElement.onerror = function(e) {
-          console.warn("VocalLens audio chunk warning:", e);
-          self.currentIndex++;
-          self._playNextChunk();
+          console.warn("Audio element error on chunk, attempting Web Speech fallback:", e);
+          self._speakWebSpeechFallback(chunk);
         };
 
         const playPromise = this.audioElement.play();
         if (playPromise !== undefined) {
           playPromise.catch(function(err) {
-            console.warn("Audio play promise error:", err);
-            if (self.onError) self.onError(err.message || "Audio playback error");
+            console.warn("Audio play promise rejected, using Web Speech fallback:", err);
+            self._speakWebSpeechFallback(chunk);
           });
+        }
+      },
+
+      _speakWebSpeechFallback: function(text) {
+        if (!window.speechSynthesis) {
+          this.currentIndex++;
+          this._playNextChunk();
+          return;
+        }
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'ar-SA';
+          u.rate = this.rate || 1.0;
+          u.pitch = this.pitch || 1.0;
+
+          const voices = window.speechSynthesis.getVoices();
+          const arVoice = voices.find(v => (v.lang && v.lang.toLowerCase().startsWith('ar')) || (v.name && v.name.toLowerCase().includes('arabic')));
+          if (arVoice) {
+            u.voice = arVoice;
+          }
+
+          const self = this;
+          u.onstart = function() {
+            self.isPlaying = true;
+            if (self.onStart && self.currentIndex === 0) self.onStart();
+            if (self.onWord) {
+              const preview = text.length > 28 ? text.substring(0, 28) + '...' : text;
+              self.onWord(preview);
+            }
+          };
+
+          u.onend = function() {
+            self.currentIndex++;
+            self._playNextChunk();
+          };
+
+          u.onerror = function(err) {
+            console.warn("Web Speech fallback error:", err);
+            self.currentIndex++;
+            self._playNextChunk();
+          };
+
+          window.speechSynthesis.speak(u);
+        } catch (e) {
+          console.warn("Web Speech exception:", e);
+          this.currentIndex++;
+          this._playNextChunk();
         }
       },
 
@@ -171,6 +219,9 @@
         if (this.audioElement && this.isPlaying) {
           this.audioElement.pause();
           this.isPlaying = false;
+        }
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+          window.speechSynthesis.pause();
         }
       },
 
@@ -180,12 +231,18 @@
             this.isPlaying = true;
           }).catch(e => console.warn(e));
         }
+        if (window.speechSynthesis && window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
       },
 
       stop: function() {
         if (this.audioElement) {
           this.audioElement.pause();
           this.audioElement.currentTime = 0;
+        }
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
         }
         this.isPlaying = false;
         this.queue = [];

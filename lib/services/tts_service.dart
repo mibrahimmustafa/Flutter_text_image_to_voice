@@ -242,30 +242,33 @@ class TtsService extends ChangeNotifier {
           'en-us-x-iol#male',
         ];
 
-        final arabicKeywords = [
-          'ar',
-          'arabic',
-          'arab',
-          'ar-sa',
-          'ar-eg',
-          'ar-ae',
-          'tarik',
-          'maged',
-          'naayf',
-          'zeina',
-          'salma',
-          'hoda',
-          'laila',
-          'mariam',
-        ];
-
         for (var voice in _allVoices) {
           final nameLower = voice['name']!.toLowerCase();
           final localeLower = voice['locale']!.toLowerCase();
           final genderLower = voice['gender']!.toLowerCase();
 
-          // Check if Arabic
-          if (arabicKeywords.any((k) => nameLower.contains(k) || localeLower.contains(k))) {
+          // Check if genuinely an Arabic voice (must not be an English voice)
+          final isEnglish = localeLower.startsWith('en') || nameLower.contains('english');
+          final isArabic = !isEnglish && (
+            localeLower.startsWith('ar') ||
+            localeLower == 'ar' ||
+            localeLower.contains('ar-') ||
+            localeLower.contains('ar_') ||
+            nameLower.contains('arabic') ||
+            nameLower.contains('عربي') ||
+            nameLower.contains('tarik') ||
+            nameLower.contains('maged') ||
+            nameLower.contains('naayf') ||
+            nameLower.contains('zeina') ||
+            nameLower.contains('salma') ||
+            nameLower.contains('laila') ||
+            nameLower.contains('mariam') ||
+            nameLower.contains('hoda') ||
+            nameLower.contains('shakir') ||
+            nameLower.contains('hamed')
+          );
+
+          if (isArabic) {
             _arabicVoices.add(voice);
           }
 
@@ -363,7 +366,7 @@ class TtsService extends ChangeNotifier {
       }
     }
 
-    if (bestMatch == null) {
+    if (bestMatch == null && persona.language != PersonaLanguage.arabic) {
       if (persona.gender == VoiceGender.female) {
         if (_femaleVoices.isNotEmpty) {
           for (var pref in persona.preferredSystemVoices) {
@@ -403,6 +406,8 @@ class TtsService extends ChangeNotifier {
       } catch (e) {
         debugPrint("applyPersona setVoice error: $e");
       }
+    } else {
+      _selectedSystemVoice = null;
     }
 
     await _flutterTts.setLanguage(_currentLanguage);
