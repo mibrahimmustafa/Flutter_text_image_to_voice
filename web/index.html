@@ -32,15 +32,185 @@
   <title>vocal_lens</title>
   <link rel="manifest" href="manifest.json">
 </head>
-<body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <!-- VocalLens High-Fidelity Audio Bridge (Google Neural Cloud Fallback for Arabic) -->
+  <script>
+    window.vocalLensAudio = {
+      audioElement: null,
+      isPlaying: false,
+      queue: [],
+      currentIndex: 0,
+      rate: 1.0,
+      pitch: 1.0,
+      gender: 'female',
+      volume: 1.0,
+      onStart: null,
+      onWord: null,
+      onEnd: null,
+      onError: null,
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+      playArabicText: function(text, rate, pitch, gender, onStart, onWord, onEnd, onError) {
+        this.stop();
+        this.rate = rate || 1.0;
+        this.pitch = pitch || 1.0;
+        this.gender = gender || 'female';
+        this.onStart = onStart;
+        this.onWord = onWord;
+        this.onEnd = onEnd;
+        this.onError = onError;
+
+        if (!text || text.trim().length === 0) {
+          if (onEnd) onEnd();
+          return;
+        }
+
+        // Split text into chunks of <= 120 chars, breaking at sentences or spaces
+        const rawChunks = text.split(/([.،؛؟!\n]+)/);
+        const chunks = [];
+        let current = '';
+
+        for (let i = 0; i < rawChunks.length; i++) {
+          const piece = rawChunks[i].trim();
+          if (!piece) continue;
+          if ((current + ' ' + piece).length <= 120) {
+            current = current ? (current + ' ' + piece) : piece;
+          } else {
+            if (current) chunks.push(current);
+            if (piece.length <= 120) {
+              current = piece;
+            } else {
+              // Split long sentence by words
+              const words = piece.split(/\s+/);
+              let sub = '';
+              for (const w of words) {
+                if ((sub + ' ' + w).length <= 120) {
+                  sub = sub ? (sub + ' ' + w) : w;
+                } else {
+                  if (sub) chunks.push(sub);
+                  sub = w;
+                }
+              }
+              current = sub;
+            }
+          }
+        }
+        if (current) chunks.push(current);
+
+        this.queue = chunks.filter(c => c.trim().length > 0);
+        this.currentIndex = 0;
+
+        if (this.queue.length === 0) {
+          if (onEnd) onEnd();
+          return;
+        }
+
+        this._playNextChunk();
+      },
+
+      _playNextChunk: function() {
+        if (this.currentIndex >= this.queue.length) {
+          this.isPlaying = false;
+          if (this.onEnd) this.onEnd();
+          return;
+        }
+
+        const chunk = this.queue[this.currentIndex];
+        const encoded = encodeURIComponent(chunk);
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=ar&client=tw-ob`;
+
+        if (!this.audioElement) {
+          this.audioElement = new Audio();
+        }
+
+        this.audioElement.src = url;
+
+        // Apply gender cadence: male is deeper/deliberate, female is brisk, AI is fast
+        let effectiveRate = this.rate;
+        if (this.gender === 'male') {
+          effectiveRate = this.rate * 0.94;
+        } else if (this.gender === 'female') {
+          effectiveRate = this.rate * 1.02;
+        } else if (this.gender === 'neutral') {
+          effectiveRate = this.rate * 1.10;
+        }
+        this.audioElement.playbackRate = Math.max(0.5, Math.min(effectiveRate, 4.0));
+        this.audioElement.volume = this.volume;
+
+        const self = this;
+        this.audioElement.onplay = function() {
+          self.isPlaying = true;
+          if (self.onStart && self.currentIndex === 0) {
+            self.onStart();
+          }
+          if (self.onWord) {
+            const preview = chunk.length > 28 ? chunk.substring(0, 28) + '...' : chunk;
+            self.onWord(preview);
+          }
+        };
+
+        this.audioElement.onended = function() {
+          self.currentIndex++;
+          self._playNextChunk();
+        };
+
+        this.audioElement.onerror = function(e) {
+          console.warn("VocalLens audio chunk warning:", e);
+          self.currentIndex++;
+          self._playNextChunk();
+        };
+
+        const playPromise = this.audioElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(err) {
+            console.warn("Audio play promise error:", err);
+            if (self.onError) self.onError(err.message || "Audio playback error");
+          });
+        }
+      },
+
+      pause: function() {
+        if (this.audioElement && this.isPlaying) {
+          this.audioElement.pause();
+          this.isPlaying = false;
+        }
+      },
+
+      resume: function() {
+        if (this.audioElement && !this.isPlaying && this.currentIndex < this.queue.length) {
+          this.audioElement.play().then(() => {
+            this.isPlaying = true;
+          }).catch(e => console.warn(e));
+        }
+      },
+
+      stop: function() {
+        if (this.audioElement) {
+          this.audioElement.pause();
+          this.audioElement.currentTime = 0;
+        }
+        this.isPlaying = false;
+        this.queue = [];
+        this.currentIndex = 0;
+      },
+
+      setRate: function(rate) {
+        this.rate = rate;
+        if (this.audioElement) {
+          let effectiveRate = rate;
+          if (this.gender === 'male') effectiveRate = rate * 0.94;
+          else if (this.gender === 'female') effectiveRate = rate * 1.02;
+          else if (this.gender === 'neutral') effectiveRate = rate * 1.10;
+          this.audioElement.playbackRate = Math.max(0.5, Math.min(effectiveRate, 4.0));
+        }
+      },
+
+      setVolume: function(volume) {
+        this.volume = volume;
+        if (this.audioElement) {
+          this.audioElement.volume = volume;
+        }
+      }
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

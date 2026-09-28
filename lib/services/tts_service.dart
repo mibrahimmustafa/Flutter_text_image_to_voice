@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../models/voice_persona.dart';
+import 'cloud_arabic_tts_service.dart';
 
 enum TtsPlaybackState {
   stopped,
@@ -15,6 +16,8 @@ class TtsService extends ChangeNotifier {
   TtsService._internal();
 
   final FlutterTts _flutterTts = FlutterTts();
+  final CloudArabicTtsService _cloudArabicTts = CloudArabicTtsService();
+  bool _isUsingCloudArabicTts = false;
 
   TtsPlaybackState _state = TtsPlaybackState.stopped;
   TtsPlaybackState get state => _state;
@@ -448,12 +451,18 @@ class TtsService extends ChangeNotifier {
 
   Future<void> setRate(double val) async {
     _rate = val;
+    if (_isUsingCloudArabicTts) {
+      _cloudArabicTts.setRate(_rate);
+    }
     await _flutterTts.setSpeechRate(_rate);
     notifyListeners();
   }
 
   Future<void> setVolume(double val) async {
     _volume = val;
+    if (_isUsingCloudArabicTts) {
+      _cloudArabicTts.setVolume(_volume);
+    }
     await _flutterTts.setVolume(_volume);
     notifyListeners();
   }
@@ -468,7 +477,7 @@ class TtsService extends ChangeNotifier {
     if (text.trim().isEmpty) return;
 
     // 1. Force stop previous utterance to clear any stalled state
-    await _flutterTts.stop();
+    await stop();
     await Future.delayed(const Duration(milliseconds: 60));
 
     // 2. Ensure voices are loaded
@@ -476,20 +485,62 @@ class TtsService extends ChangeNotifier {
       await _loadAndCategorizeVoices();
     }
 
-    // 3. Detect Arabic text and set appropriate language & voice
-    final hasArabic = isArabicString(text);
+    // 3. Detect Arabic text or active Arabic persona
+    final hasArabic = isArabicString(text) || _currentPersona.language == PersonaLanguage.arabic;
+
+    // 4. If speaking Arabic and no native system Arabic voice is installed, use CloudArabicTtsService
+    if (hasArabic && _arabicVoices.isEmpty) {
+      _isUsingCloudArabicTts = true;
+      _state = TtsPlaybackState.playing;
+      notifyListeners();
+
+      final genderString = _currentPersona.gender == VoiceGender.male
+          ? 'male'
+          : (_currentPersona.gender == VoiceGender.female ? 'female' : 'neutral');
+
+      await _cloudArabicTts.play(
+        text: text,
+        rate: _rate,
+        pitch: _pitch,
+        gender: genderString,
+        onStart: () {
+          _state = TtsPlaybackState.playing;
+          notifyListeners();
+        },
+        onWord: (word) {
+          _currentSpokenWord = word;
+          notifyListeners();
+        },
+        onEnd: () {
+          _state = TtsPlaybackState.stopped;
+          _currentSpokenWord = '';
+          _isUsingCloudArabicTts = false;
+          notifyListeners();
+        },
+        onError: (err) {
+          debugPrint("Cloud Arabic TTS playback notice: $err");
+          _state = TtsPlaybackState.stopped;
+          _isUsingCloudArabicTts = false;
+          notifyListeners();
+        },
+      );
+      return;
+    }
+
+    // 5. System TTS execution (English, or devices with installed Arabic voice pack)
+    _isUsingCloudArabicTts = false;
     final targetLang = hasArabic ? 'ar-SA' : _currentLanguage;
 
     try {
       await _flutterTts.setLanguage(targetLang);
     } catch (_) {}
 
-    // 4. Ensure active voice is selected
+    // Ensure active voice is selected
     if (_selectedSystemVoice == null) {
       await applyPersona(_currentPersona);
     }
 
-    // If speaking Arabic text and Arabic voices exist, route to best Arabic voice
+    // Route to best Arabic voice if native Arabic voices exist
     Map<String, String>? voiceToApply = _selectedSystemVoice;
     if (hasArabic && _arabicVoices.isNotEmpty) {
       final isFemale = _currentPersona.gender == VoiceGender.female;
@@ -501,7 +552,6 @@ class TtsService extends ChangeNotifier {
       );
     }
 
-    // 5. Apply voice and parameters
     if (voiceToApply != null) {
       try {
         await _flutterTts.setVoice({
@@ -524,12 +574,28 @@ class TtsService extends ChangeNotifier {
   }
 
   Future<void> pause() async {
-    await _flutterTts.pause();
+    if (_isUsingCloudArabicTts) {
+      _cloudArabicTts.pause();
+    } else {
+      await _flutterTts.pause();
+    }
     _state = TtsPlaybackState.paused;
     notifyListeners();
   }
 
+  Future<void> resume() async {
+    if (_isUsingCloudArabicTts) {
+      _cloudArabicTts.resume();
+    }
+    _state = TtsPlaybackState.playing;
+    notifyListeners();
+  }
+
   Future<void> stop() async {
+    if (_isUsingCloudArabicTts) {
+      _cloudArabicTts.stop();
+      _isUsingCloudArabicTts = false;
+    }
     await _flutterTts.stop();
     _state = TtsPlaybackState.stopped;
     _currentSpokenWord = '';
@@ -540,7 +606,7 @@ class TtsService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _flutterTts.stop();
+    stop();
     super.dispose();
   }
 }
