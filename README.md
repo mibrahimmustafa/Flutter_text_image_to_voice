@@ -46,22 +46,22 @@
 ### 🇬🇧 English Personas
 | Persona | Gender | Pitch | Rate | Profile Description |
 |:---|:---:|:---:|:---:|:---|
-| **Alexander** 👨 | Male | `0.70` | `0.48` | Deep baritone, authoritative narrator |
-| **Marcus** 👨 | Male | `0.88` | `0.50` | Warm storyteller, conversational & balanced |
-| **Elijah** 👨 | Male | `1.02` | `0.54` | Energetic presenter, clear and articulate |
-| **Victoria** 👩 | Female | `1.42` | `0.50` | Warm, elegant, and melodious |
-| **Emma** 👩 | Female | `1.58` | `0.52` | Bright, cheerful, and upbeat |
-| **Sophia** 👩 | Female | `1.30` | `0.46` | Gentle, soothing, and calm |
-| **Titan-9** 🤖 | Neutral | `0.50` | `0.62` | Futuristic cybernetic AI synthesizer |
+| **Alexander** 👨 | Male | `0.94` | `1.00` | Deep BBC studio baritone, authoritative narrator |
+| **Marcus** 👨 | Male | `1.00` | `1.00` | Warm storyteller, conversational, natural everyday flow |
+| **Elijah** 👨 | Male | `1.03` | `1.04` | Energetic presenter, crisp, dynamic and enthusiastic |
+| **Victoria** 👩 | Female | `1.00` | `0.98` | Studio executive, smooth, refined British narration |
+| **Emma** 👩 | Female | `1.04` | `1.00` | Bright, lively, cheerful, and engaging host |
+| **Sophia** 👩 | Female | `0.98` | `0.95` | Gentle, soothing, meditative, and mindful cadence |
+| **Titan-9** 🤖 | Neutral | `0.88` | `1.08` | Futuristic cybernetic neural AI synthesizer |
 
 ### 🇸🇦 Arabic Personas (الأصوات العربية)
 | Persona | Gender | Pitch | Rate | Profile Description |
 |:---|:---:|:---:|:---:|:---|
-| **طارق (Tariq)** 👨 | Male | `0.72` | `0.48` | صوت رجالي عميق ووقور، مثالي للأخبار والمقالات |
-| **عمر (Omar)** 👨 | Male | `0.90` | `0.50` | راوٍ عربي هادئ وودود |
-| **فاطمة (Fatima)** 👩 | Female | `1.38` | `0.50` | صوت نسائي فصيح ودافئ، مخارج حروف واضحة |
-| **مريم (Mariam)** 👩 | Female | `1.55` | `0.52` | صوت نسائي نضر ومشرق |
-| **المعالج الذكي (Titan AR)** 🤖 | Neutral | `0.50` | `0.60` | معالج ذكاء اصطناعي صوتي مستقبلي |
+| **طارق (Tariq)** 👨 | Male | `0.94` | `0.98` | صوت رجالي عميق ووقور ورخيم، مثالي للأخبار والمقالات والكتب |
+| **عمر (Omar)** 👨 | Male | `1.00` | `1.00` | راوٍ عربي دافئ وطبيعي بنبرة انسيابية مريحة |
+| **فاطمة (Fatima)** 👩 | Female | `1.01` | `0.98` | صوت نسائي فصيح وأصيل بمخارج حروف دقيقة ومتمكنة |
+| **مريم (Mariam)** 👩 | Female | `1.04` | `1.00` | صوت نسائي نضر ومشرق مفعم بالحيوية والتفاؤل |
+| **المعالج الذكي (Titan AR)** 🤖 | Neutral | `0.88` | `1.08` | معالج ذكاء اصطناعي صوتي إلكتروني متطور وفصيح |
 
 ---
 

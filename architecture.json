@@ -136,26 +136,26 @@
   },
   "speechPersonas": {
     "english": [
-      { "id": "male_deep", "name": "Alexander", "gender": "male", "pitch": 0.70, "rate": 0.48, "tag": "Deep Baritone" },
-      { "id": "male_warm", "name": "Marcus", "gender": "male", "pitch": 0.88, "rate": 0.50, "tag": "Warm Storyteller" },
-      { "id": "male_crisp", "name": "Elijah", "gender": "male", "pitch": 1.02, "rate": 0.54, "tag": "Energetic Presenter" },
-      { "id": "female_elegant", "name": "Victoria", "gender": "female", "pitch": 1.42, "rate": 0.50, "tag": "Warm & Elegant" },
-      { "id": "female_bright", "name": "Emma", "gender": "female", "pitch": 1.58, "rate": 0.52, "tag": "Bright & Cheerful" },
-      { "id": "female_gentle", "name": "Sophia", "gender": "female", "pitch": 1.30, "rate": 0.46, "tag": "Gentle & Calming" },
-      { "id": "cyber_bot", "name": "Titan-9", "gender": "neutral", "pitch": 0.50, "rate": 0.62, "tag": "Futuristic AI" }
+      { "id": "male_deep", "name": "Alexander", "gender": "male", "pitch": 0.94, "rate": 1.00, "tag": "Deep Studio Narrator" },
+      { "id": "male_warm", "name": "Marcus", "gender": "male", "pitch": 1.00, "rate": 1.00, "tag": "Warm Storyteller" },
+      { "id": "male_crisp", "name": "Elijah", "gender": "male", "pitch": 1.03, "rate": 1.04, "tag": "Energetic Presenter" },
+      { "id": "female_elegant", "name": "Victoria", "gender": "female", "pitch": 1.00, "rate": 0.98, "tag": "Studio Executive" },
+      { "id": "female_bright", "name": "Emma", "gender": "female", "pitch": 1.04, "rate": 1.00, "tag": "Bright & Engaging" },
+      { "id": "female_gentle", "name": "Sophia", "gender": "female", "pitch": 0.98, "rate": 0.95, "tag": "Gentle & Calming" },
+      { "id": "cyber_bot", "name": "Titan-9", "gender": "neutral", "pitch": 0.88, "rate": 1.08, "tag": "Cybernetic AI" }
     ],
     "arabic": [
-      { "id": "ar_male_deep", "name": "طارق (Tariq)", "gender": "male", "pitch": 0.72, "rate": 0.48, "tag": "صوت رجالي وقور" },
-      { "id": "ar_male_warm", "name": "عمر (Omar)", "gender": "male", "pitch": 0.90, "rate": 0.50, "tag": "راوٍ عربي هادئ" },
-      { "id": "ar_female_warm", "name": "فاطمة (Fatima)", "gender": "female", "pitch": 1.38, "rate": 0.50, "tag": "صوت نسائي فصيح" },
-      { "id": "ar_female_bright", "name": "مريم (Mariam)", "gender": "female", "pitch": 1.55, "rate": 0.52, "tag": "صوت نسائي نضر" },
-      { "id": "ar_cyber_bot", "name": "المعالج الذكي (Titan AR)", "gender": "neutral", "pitch": 0.50, "rate": 0.60, "tag": "روبوت ذكاء اصطناعي" }
+      { "id": "ar_male_deep", "name": "طارق (Tariq)", "gender": "male", "pitch": 0.94, "rate": 0.98, "tag": "صوت رجالي وقور ورخيم" },
+      { "id": "ar_male_warm", "name": "عمر (Omar)", "gender": "male", "pitch": 1.00, "rate": 1.00, "tag": "راوٍ عربي طبيعي وودود" },
+      { "id": "ar_female_warm", "name": "فاطمة (Fatima)", "gender": "female", "pitch": 1.01, "rate": 0.98, "tag": "صوت نسائي فصيح وأصيل" },
+      { "id": "ar_female_bright", "name": "مريم (Mariam)", "gender": "female", "pitch": 1.04, "rate": 1.00, "tag": "صوت نسائي نضر ومشرق" },
+      { "id": "ar_cyber_bot", "name": "المعالج الذكي (Titan AR)", "gender": "neutral", "pitch": 0.88, "rate": 1.08, "tag": "ذكاء اصطناعي باللغة العربية" }
     ]
   },
   "speedController": {
     "range": { "min": 0.25, "max": 5.0 },
     "divisions": 95,
-    "presets": [0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 5.00]
+    "presets": [0.50, 0.75, 0.90, 1.00, 1.15, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00, 4.00, 5.00]
   },
   "dataFlow": {
     "photoInputPipeline": "Image (Camera/Gallery/File/Preset) -> Bytes/Path -> OcrService -> Extracted Text -> Text Controller -> Language Detection -> TtsService.speak() -> Speech Synthesis",

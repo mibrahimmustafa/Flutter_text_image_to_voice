@@ -41,10 +41,10 @@ class TtsService extends ChangeNotifier {
   VoicePersona _currentPersona = VoicePersona.englishPersonas[0];
   VoicePersona get currentPersona => _currentPersona;
 
-  double _pitch = 0.70;
+  double _pitch = 0.94;
   double get pitch => _pitch;
 
-  double _rate = 0.50;
+  double _rate = 1.00;
   double get rate => _rate;
 
   double _volume = 1.0;
@@ -288,6 +288,22 @@ class TtsService extends ChangeNotifier {
           }
         }
 
+        // Sort voices so high-definition, neural, and studio voices appear at the top
+        int voiceQualityScore(Map<String, String> voice) {
+          final name = voice['name']!.toLowerCase();
+          int score = 0;
+          if (name.contains('natural') || name.contains('online') || name.contains('neural')) score += 100;
+          if (name.contains('google')) score += 80;
+          if (name.contains('uk english') || name.contains('us english')) score += 40;
+          if (name.contains('mark') || name.contains('guy') || name.contains('jenny') || name.contains('aria')) score += 30;
+          if (name.contains('desktop')) score -= 40; // Deprioritize legacy desktop voices
+          return score;
+        }
+
+        _maleVoices.sort((a, b) => voiceQualityScore(b).compareTo(voiceQualityScore(a)));
+        _femaleVoices.sort((a, b) => voiceQualityScore(b).compareTo(voiceQualityScore(a)));
+        _arabicVoices.sort((a, b) => voiceQualityScore(b).compareTo(voiceQualityScore(a)));
+
         debugPrint("TtsService: Loaded ${_allVoices.length} voices (${_maleVoices.length} male, ${_femaleVoices.length} female, ${_arabicVoices.length} arabic)");
       }
     } catch (e) {
@@ -315,20 +331,32 @@ class TtsService extends ChangeNotifier {
 
     // Check Arabic voices first if persona is Arabic
     if (persona.language == PersonaLanguage.arabic && _arabicVoices.isNotEmpty) {
-      if (persona.gender == VoiceGender.female) {
-        final fMatch = _arabicVoices.where((v) =>
-            v['name']!.toLowerCase().contains('female') ||
-            v['name']!.toLowerCase().contains('zeina') ||
-            v['name']!.toLowerCase().contains('salma') ||
-            v['name']!.toLowerCase().contains('hoda'));
-        bestMatch = fMatch.isNotEmpty ? fMatch.first : _arabicVoices.first;
-      } else {
-        final mMatch = _arabicVoices.where((v) =>
-            v['name']!.toLowerCase().contains('male') ||
-            v['name']!.toLowerCase().contains('tarik') ||
-            v['name']!.toLowerCase().contains('maged') ||
-            v['name']!.toLowerCase().contains('naayf'));
-        bestMatch = mMatch.isNotEmpty ? mMatch.first : _arabicVoices.first;
+      for (var pref in persona.preferredSystemVoices) {
+        final match = _arabicVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
+        if (match.isNotEmpty) {
+          bestMatch = match.first;
+          break;
+        }
+      }
+      if (bestMatch == null) {
+        if (persona.gender == VoiceGender.female) {
+          bestMatch = _arabicVoices.firstWhere(
+            (v) => v['name']!.toLowerCase().contains('female') ||
+                   v['name']!.toLowerCase().contains('zeina') ||
+                   v['name']!.toLowerCase().contains('salma') ||
+                   v['name']!.toLowerCase().contains('laila') ||
+                   v['name']!.toLowerCase().contains('mariam'),
+            orElse: () => _arabicVoices.first,
+          );
+        } else {
+          bestMatch = _arabicVoices.firstWhere(
+            (v) => v['name']!.toLowerCase().contains('male') ||
+                   v['name']!.toLowerCase().contains('tarik') ||
+                   v['name']!.toLowerCase().contains('maged') ||
+                   v['name']!.toLowerCase().contains('naayf'),
+            orElse: () => _arabicVoices.first,
+          );
+        }
       }
     }
 
@@ -386,10 +414,13 @@ class TtsService extends ChangeNotifier {
     _selectedSystemVoice = voice;
     final nameLower = voice['name']!.toLowerCase();
 
-    if (nameLower.contains('zira') || nameLower.contains('female') || nameLower.contains('google us english') || nameLower.contains('zeina')) {
-      _pitch = 1.38;
-    } else if (nameLower.contains('david') || nameLower.contains('male') || nameLower.contains('mark') || nameLower.contains('tarik')) {
-      _pitch = 0.75;
+    // Natural human pitch baseline instead of artificial distortion
+    if (nameLower.contains('female') || nameLower.contains('zira') || nameLower.contains('zeina')) {
+      _pitch = 1.02;
+    } else if (nameLower.contains('male') || nameLower.contains('david') || nameLower.contains('tarik')) {
+      _pitch = 0.96;
+    } else {
+      _pitch = 1.00;
     }
 
     try {
@@ -445,7 +476,7 @@ class TtsService extends ChangeNotifier {
       await _loadAndCategorizeVoices();
     }
 
-    // 3. Detect Arabic text and set appropriate language
+    // 3. Detect Arabic text and set appropriate language & voice
     final hasArabic = isArabicString(text);
     final targetLang = hasArabic ? 'ar-SA' : _currentLanguage;
 
@@ -458,12 +489,24 @@ class TtsService extends ChangeNotifier {
       await applyPersona(_currentPersona);
     }
 
+    // If speaking Arabic text and Arabic voices exist, route to best Arabic voice
+    Map<String, String>? voiceToApply = _selectedSystemVoice;
+    if (hasArabic && _arabicVoices.isNotEmpty) {
+      final isFemale = _currentPersona.gender == VoiceGender.female;
+      voiceToApply = _arabicVoices.firstWhere(
+        (v) => isFemale
+            ? v['name']!.toLowerCase().contains('female') || v['name']!.toLowerCase().contains('zeina')
+            : v['name']!.toLowerCase().contains('male') || v['name']!.toLowerCase().contains('tarik'),
+        orElse: () => _arabicVoices.first,
+      );
+    }
+
     // 5. Apply voice and parameters
-    if (_selectedSystemVoice != null) {
+    if (voiceToApply != null) {
       try {
         await _flutterTts.setVoice({
-          'name': _selectedSystemVoice!['name']!,
-          'locale': _selectedSystemVoice!['locale']!,
+          'name': voiceToApply['name']!,
+          'locale': voiceToApply['locale']!,
         });
       } catch (e) {
         debugPrint("Error applying voice in speak(): $e");

@@ -12,16 +12,17 @@ class SpeedPreset {
   });
 
   static const List<SpeedPreset> presets = [
-    SpeedPreset(rate: 0.25, label: '0.25x', icon: '🐌'),
     SpeedPreset(rate: 0.50, label: '0.50x', icon: '🐢'),
     SpeedPreset(rate: 0.75, label: '0.75x', icon: '☕'),
+    SpeedPreset(rate: 0.90, label: '0.90x', icon: '📖'),
     SpeedPreset(rate: 1.00, label: '1.00x', icon: '✨'),
+    SpeedPreset(rate: 1.15, label: '1.15x', icon: '🎙️'),
     SpeedPreset(rate: 1.25, label: '1.25x', icon: '⚡'),
     SpeedPreset(rate: 1.50, label: '1.50x', icon: '🏃'),
+    SpeedPreset(rate: 1.75, label: '1.75x', icon: '🔥'),
     SpeedPreset(rate: 2.00, label: '2.00x', icon: '🚀'),
     SpeedPreset(rate: 2.50, label: '2.50x', icon: '🏎️'),
     SpeedPreset(rate: 3.00, label: '3.00x', icon: '🛸'),
-    SpeedPreset(rate: 3.50, label: '3.50x', icon: '🌪️'),
     SpeedPreset(rate: 4.00, label: '4.00x', icon: '⚡'),
     SpeedPreset(rate: 5.00, label: '5.00x', icon: '🌌'),
   ];
@@ -77,7 +78,9 @@ class SpeedScrollSelector extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '${currentRate.toStringAsFixed(2)}x ${isArabic ? "سرعة" : "Speed"}',
+                (currentRate - 1.00).abs() < 0.04
+                    ? (isArabic ? '1.00x سرعة مثالية ✨' : '1.00x Natural Speed ✨')
+                    : '${currentRate.toStringAsFixed(2)}x ${isArabic ? "سرعة" : "Speed"}',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -99,6 +102,7 @@ class SpeedScrollSelector extends StatelessWidget {
             itemBuilder: (context, index) {
               final preset = SpeedPreset.presets[index];
               final isSelected = (currentRate - preset.rate).abs() < 0.06;
+              final isDefaultNormal = (preset.rate - 1.00).abs() < 0.01;
 
               return InkWell(
                 onTap: () => onRateChanged(preset.rate),
@@ -114,8 +118,10 @@ class SpeedScrollSelector extends StatelessWidget {
                     border: Border.all(
                       color: isSelected
                           ? accentColor
-                          : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
-                      width: isSelected ? 1.5 : 1,
+                          : isDefaultNormal
+                              ? accentColor.withValues(alpha: 0.4)
+                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
+                      width: isSelected ? 1.5 : (isDefaultNormal ? 1.2 : 1),
                     ),
                     boxShadow: [
                       if (isSelected)
@@ -135,7 +141,7 @@ class SpeedScrollSelector extends StatelessWidget {
                         preset.label,
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: (isSelected || isDefaultNormal) ? FontWeight.bold : FontWeight.w500,
                           color: isSelected ? Colors.white : theme.colorScheme.onSurface,
                         ),
                       ),
