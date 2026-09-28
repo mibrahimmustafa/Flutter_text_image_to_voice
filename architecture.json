@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": {
+    "name": "VocalLens (Flutter Text & Image to Voice)",
+    "description": "Cross-platform Flutter AI application that extracts text from photos (OCR) or direct input, and synthesizes it with multiple distinct male and female voices in both English and Arabic, featuring speed control up to 5x, dynamic wave visualization, and full RTL layout.",
+    "version": "1.0.0+1",
+    "repository": "https://github.com/mibrahimmustafa/Flutter_text_image_to_voice",
+    "framework": "Flutter 3.47.5 (Dart 3.13.4)",
+    "license": "MIT"
+  },
+  "supportedPlatforms": [
+    "Android (API 21+)",
+    "iOS (12.0+)",
+    "Web (Chrome, Edge, Safari, Firefox)",
+    "Windows (Windows 10/11 x64)",
+    "macOS",
+    "Linux"
+  ],
+  "architecturePattern": "Layered Component Architecture (Services, Models, Widgets, Screens)",
+  "layers": {
+    "presentation": {
+      "screens": [
+        {
+          "file": "lib/screens/home_screen.dart",
+          "class": "HomeScreen",
+          "role": "Master studio controller hosting top bar, language toggle, dual TabBarView, and sticky voice player bar"
+        },
+        {
+          "file": "lib/screens/photo_ocr_tab.dart",
+          "class": "PhotoOcrTab",
+          "role": "Camera capture, gallery selection, desktop file picker, demo photo carousel, OCR text extraction card, and speed scroll"
+        },
+        {
+          "file": "lib/screens/text_input_tab.dart",
+          "class": "TextInputTab",
+          "role": "Rich text input editor, quick preset pills (English & Arabic), character/word counters, reading duration estimate, and speed scroll"
+        }
+      ],
+      "widgets": [
+        {
+          "file": "lib/widgets/voice_player_bar.dart",
+          "class": "VoicePlayerBar",
+          "role": "Sticky bottom playback bar with sound wave visualizer, active voice badge, speed pill, tune drawer, and play/pause controls"
+        },
+        {
+          "file": "lib/widgets/speed_scroll_selector.dart",
+          "class": "SpeedScrollSelector",
+          "role": "Horizontal scrollable speed dial presets (0.25x to 5.0x) paired with a 95-step continuous slider wheel"
+        },
+        {
+          "file": "lib/widgets/audio_visualizer.dart",
+          "class": "AudioVisualizer",
+          "role": "Dynamic procedural voice wave visualizer responding in real-time to playback state"
+        },
+        {
+          "file": "lib/widgets/voice_persona_card.dart",
+          "class": "VoicePersonaCard",
+          "role": "Interactive voice card with male/female badges, accent glow, and 1-tap sound preview"
+        },
+        {
+          "file": "lib/widgets/preset_photo_carousel.dart",
+          "class": "PresetPhotoCarousel",
+          "role": "Horizontal image gallery with real-world English and Arabic photo cards for instant demonstration"
+        },
+        {
+          "file": "lib/widgets/system_voice_browser_dialog.dart",
+          "class": "SystemVoiceBrowserDialog",
+          "role": "Device voice explorer with search and tabs for All, Men, and Women voices"
+        },
+        {
+          "file": "lib/widgets/voice_control_sliders.dart",
+          "class": "VoiceControlSliders",
+          "role": "Fine-tuning controls for Voice Pitch (frequency), Speech Rate (up to 5x), and Volume"
+        },
+        {
+          "file": "lib/widgets/history_bottom_sheet.dart",
+          "class": "HistoryBottomSheet",
+          "role": "Archives recent speeches, timestamps, persona tags, word counts, and replaying triggers"
+        }
+      ]
+    },
+    "services": {
+      "tts": {
+        "file": "lib/services/tts_service.dart",
+        "class": "TtsService",
+        "features": [
+          "Singleton pattern with ChangeNotifier for reactive UI updates",
+          "Asynchronous voice polling loop with retry to handle delayed browser/OS engine initialization",
+          "Heuristic voice classification into Male, Female, and Arabic categories based on name and locale tags",
+          "Dual-tier voice system: pre-tuned VoicePersonas + raw system voice fallback",
+          "Stop-before-speak cycle to clear previous utterance locks and guarantee audio parameter updates",
+          "Dynamic Arabic character detector (RegExp [\\u0600-\\u06FF]) to automatically route speech to Arabic synthesizers",
+          "Real-time word progress tracking via progress handlers"
+        ]
+      },
+      "ocr": {
+        "files": {
+          "export": "lib/services/ocr_service.dart",
+          "interface": "lib/services/ocr_service_interface.dart",
+          "io": "lib/services/ocr_service_io.dart",
+          "web": "lib/services/ocr_service_web.dart"
+        },
+        "class": "OcrService",
+        "features": [
+          "Conditional compilation: Native IO (dart:io) on Android/iOS/Desktop vs pure Web (dart:html/web)",
+          "Google ML Kit Text Recognition on Android and iOS devices",
+          "Free cloud OCR Space REST parser fallback for Web and Desktop environments",
+          "Universal byte and file path abstraction ensuring 0 compilation errors across all target platforms"
+        ]
+      }
+    },
+    "models": {
+      "models": [
+        {
+          "file": "lib/models/voice_persona.dart",
+          "class": "VoicePersona",
+          "description": "Defines acoustic profiles (pitch, rate, preferred voice names) for 7 English personas and 5 Arabic personas across Men, Women, and AI"
+        },
+        {
+          "file": "lib/models/app_strings.dart",
+          "class": "AppStrings",
+          "description": "Comprehensive English and Arabic localization dictionary for all UI elements, buttons, and notifications"
+        },
+        {
+          "file": "lib/models/preset_demo_photo.dart",
+          "class": "PresetDemoPhoto",
+          "description": "Sample cards containing real photo URLs and corresponding OCR texts in English and Arabic"
+        },
+        {
+          "file": "lib/models/speech_history_item.dart",
+          "class": "SpeechHistoryItem",
+          "description": "Persistent record of previous conversions with source tags, timestamps, word counts, and persona tags"
+        }
+      ]
+    }
+  },
+  "speechPersonas": {
+    "english": [
+      { "id": "male_deep", "name": "Alexander", "gender": "male", "pitch": 0.70, "rate": 0.48, "tag": "Deep Baritone" },
+      { "id": "male_warm", "name": "Marcus", "gender": "male", "pitch": 0.88, "rate": 0.50, "tag": "Warm Storyteller" },
+      { "id": "male_crisp", "name": "Elijah", "gender": "male", "pitch": 1.02, "rate": 0.54, "tag": "Energetic Presenter" },
+      { "id": "female_elegant", "name": "Victoria", "gender": "female", "pitch": 1.42, "rate": 0.50, "tag": "Warm & Elegant" },
+      { "id": "female_bright", "name": "Emma", "gender": "female", "pitch": 1.58, "rate": 0.52, "tag": "Bright & Cheerful" },
+      { "id": "female_gentle", "name": "Sophia", "gender": "female", "pitch": 1.30, "rate": 0.46, "tag": "Gentle & Calming" },
+      { "id": "cyber_bot", "name": "Titan-9", "gender": "neutral", "pitch": 0.50, "rate": 0.62, "tag": "Futuristic AI" }
+    ],
+    "arabic": [
+      { "id": "ar_male_deep", "name": "طارق (Tariq)", "gender": "male", "pitch": 0.72, "rate": 0.48, "tag": "صوت رجالي وقور" },
+      { "id": "ar_male_warm", "name": "عمر (Omar)", "gender": "male", "pitch": 0.90, "rate": 0.50, "tag": "راوٍ عربي هادئ" },
+      { "id": "ar_female_warm", "name": "فاطمة (Fatima)", "gender": "female", "pitch": 1.38, "rate": 0.50, "tag": "صوت نسائي فصيح" },
+      { "id": "ar_female_bright", "name": "مريم (Mariam)", "gender": "female", "pitch": 1.55, "rate": 0.52, "tag": "صوت نسائي نضر" },
+      { "id": "ar_cyber_bot", "name": "المعالج الذكي (Titan AR)", "gender": "neutral", "pitch": 0.50, "rate": 0.60, "tag": "روبوت ذكاء اصطناعي" }
+    ]
+  },
+  "speedController": {
+    "range": { "min": 0.25, "max": 5.0 },
+    "divisions": 95,
+    "presets": [0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 2.50, 3.00, 3.50, 4.00, 5.00]
+  },
+  "dataFlow": {
+    "photoInputPipeline": "Image (Camera/Gallery/File/Preset) -> Bytes/Path -> OcrService -> Extracted Text -> Text Controller -> Language Detection -> TtsService.speak() -> Speech Synthesis",
+    "textInputPipeline": "User Typing/Preset Selection -> Text Controller -> Language Detection -> TtsService.speak() -> Speech Synthesis"
+  },
+  "dependencies": {
+    "flutter_tts": "^4.2.5",
+    "image_picker": "^1.2.3",
+    "file_picker": "^13.1.0",
+    "google_fonts": "^9.0.0",
+    "google_mlkit_text_recognition": "^0.17.1",
+    "http": "^1.6.0",
+    "path_provider": "^2.1.6"
+  }
+}
