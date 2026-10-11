@@ -74,4 +74,15 @@ class AppStrings {
   String get enterTextAlert => isArabic
       ? 'الرجاء اختيار صورة أو كتابة نص للنطق!'
       : 'Please select a photo or enter text to speak!';
+
+  // Player Bar & Actions
+  String get tapToChange => isArabic ? 'اضغط للتغيير' : 'Tap to change';
+  String get adjustPitch => isArabic ? 'ضبط النبرة والسرعة' : 'Adjust Pitch & Speed';
+  String speakingWord(String word) => isArabic ? 'يتم نطق: "$word"' : 'Speaking: "$word"';
+  String get paste => isArabic ? 'لصق' : 'Paste from clipboard';
+  String wordCountLabel(int words, int chars) => isArabic
+      ? '$words كلمة • $chars حرف'
+      : '$words words • $chars chars';
+  String audioTimeLabel(int seconds) =>
+      isArabic ? '~${seconds}ث تسجيل' : '~${seconds}s audio';
 }

@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import '../models/app_strings.dart';
 import '../models/voice_persona.dart';
 import '../services/tts_service.dart';
-import '../widgets/speed_scroll_selector.dart';
-import '../widgets/voice_persona_card.dart';
+import '../widgets/voice_persona_selector.dart';
+import '../theme/app_theme.dart';
 
 class TextInputTab extends StatefulWidget {
   final TextEditingController textController;
@@ -114,7 +114,7 @@ class _TextInputTabState extends State<TextInputTab> {
     final readingTimeSeconds = (wordCount / 2.5).ceil();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 200),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -294,21 +294,11 @@ class _TextInputTabState extends State<TextInputTab> {
           const SizedBox(height: 20),
 
           // Voice Persona Selection Section
-          _buildVoicePersonaSelector(context),
-          const SizedBox(height: 18),
-
-          // Speed Scroll Selector
-          SpeedScrollSelector(
-            currentRate: widget.ttsService.rate,
-            accentColor: widget.ttsService.currentPersona.accentColor,
-            showSlider: true,
+          VoicePersonaSelector(
+            ttsService: widget.ttsService,
             isArabic: widget.isArabic,
-            onRateChanged: (v) {
-              widget.ttsService.setRate(v);
-              setState(() {});
-            },
+            strings: strings,
           ),
-          const SizedBox(height: 16),
 
           // Big Master Speak Button
           SizedBox(
@@ -347,74 +337,4 @@ class _TextInputTabState extends State<TextInputTab> {
     );
   }
 
-  Widget _buildVoicePersonaSelector(BuildContext context) {
-    final theme = Theme.of(context);
-    final personas = widget.isArabic ? VoicePersona.arabicPersonas : VoicePersona.englishPersonas;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.spatial_audio_rounded, size: 16, color: theme.colorScheme.primary),
-                const SizedBox(width: 6),
-                Text(
-                  strings.selectVoiceTitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              '${personas.length} ${strings.stylesAvailable}',
-              style: TextStyle(
-                fontSize: 11,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        SizedBox(
-          height: 168,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: personas.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final persona = personas[index];
-              final isSelected = widget.ttsService.currentPersona.id == persona.id;
-
-              return VoicePersonaCard(
-                persona: persona,
-                isSelected: isSelected,
-                isArabic: widget.isArabic,
-                onSelect: () => widget.ttsService.applyPersona(persona),
-                onPreview: () async {
-                  await widget.ttsService.applyPersona(persona);
-                  String previewText;
-                  if (widget.isArabic) {
-                    previewText = persona.gender == VoiceGender.male
-                        ? "مرحباً، أنا ${persona.nameArabic}. جاهز لقراءة نصوصك بصوت رجالي عربي."
-                        : "أهلاً، أنا ${persona.nameArabic}. جاهزة لنطق كتاباتك بصوت نسائي عربي فصيح.";
-                  } else {
-                    previewText = persona.gender == VoiceGender.male
-                        ? "Hi, I'm ${persona.name}. Ready to speak your text with a masculine tone."
-                        : "Hello, I am ${persona.name}. Ready to read your text with an expressive feminine voice.";
-                  }
-                  await widget.ttsService.speak(previewText);
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 }

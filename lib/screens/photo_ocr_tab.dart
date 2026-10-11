@@ -10,7 +10,6 @@ import '../models/voice_persona.dart';
 import '../services/ocr_service.dart';
 import '../services/tts_service.dart';
 import '../widgets/preset_photo_carousel.dart';
-import '../widgets/speed_scroll_selector.dart';
 import '../widgets/voice_persona_card.dart';
 
 class PhotoOcrTab extends StatefulWidget {
@@ -185,7 +184,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
         : widget.textController.text.trim().split(RegExp(r'\s+')).length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 200),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -368,37 +367,43 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.text_fields_rounded, size: 18, color: theme.colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          strings.recognizedText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        if (_lastOcrDuration != null) ...[
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(Icons.text_fields_rounded, size: 18, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+                          Flexible(
                             child: Text(
-                              '${_lastOcrDuration!.inMilliseconds}ms',
-                              style: const TextStyle(
-                                fontSize: 10,
+                              strings.recognizedText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                           ),
+                          if (_lastOcrDuration != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${_lastOcrDuration!.inMilliseconds}ms',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                     Row(
                       children: [
@@ -459,19 +464,6 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                // Speed Scroll Selector
-                SpeedScrollSelector(
-                  currentRate: widget.ttsService.rate,
-                  accentColor: widget.ttsService.currentPersona.accentColor,
-                  showSlider: true,
-                  isArabic: widget.isArabic,
-                  onRateChanged: (v) {
-                    widget.ttsService.setRate(v);
-                    setState(() {});
-                  },
                 ),
                 const SizedBox(height: 14),
 

@@ -13,15 +13,21 @@ class SystemVoiceBrowserDialog extends StatefulWidget {
   State<SystemVoiceBrowserDialog> createState() => _SystemVoiceBrowserDialogState();
 }
 
-class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> with SingleTickerProviderStateMixin {
+class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  bool get _hasGender => widget.ttsService.hasGenderData;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: _hasGender ? 3 : 1,
+      vsync: this,
+    );
   }
 
   @override
@@ -47,8 +53,8 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
     final isDark = theme.brightness == Brightness.dark;
 
     final all = _filterVoices(widget.ttsService.allVoices);
-    final men = _filterVoices(widget.ttsService.maleVoices);
-    final women = _filterVoices(widget.ttsService.femaleVoices);
+    final men = _hasGender ? _filterVoices(widget.ttsService.maleVoices) : <Map<String, String>>[];
+    final women = _hasGender ? _filterVoices(widget.ttsService.femaleVoices) : <Map<String, String>>[];
 
     return Dialog(
       backgroundColor: isDark ? const Color(0xFF161B26) : Colors.white,
@@ -73,7 +79,8 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
                           color: theme.colorScheme.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.record_voice_over_rounded, color: theme.colorScheme.primary),
+                        child: Icon(Icons.record_voice_over_rounded,
+                            color: theme.colorScheme.primary),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -88,7 +95,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
                             ),
                           ),
                           Text(
-                            'Select from installed synthetic voices',
+                            'Preview voices to find the right one',
                             style: TextStyle(
                               fontSize: 12,
                               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -111,7 +118,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
                 controller: _searchController,
                 onChanged: (val) => setState(() => _searchQuery = val),
                 decoration: InputDecoration(
-                  hintText: 'Search voice name or locale (e.g. David, Zira, en-US)...',
+                  hintText: 'Search voice name or locale (e.g. David, en-US)...',
                   hintStyle: const TextStyle(fontSize: 13),
                   prefixIcon: const Icon(Icons.search_rounded, size: 20),
                   suffixIcon: _searchQuery.isNotEmpty
@@ -125,7 +132,8 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
                       : null,
                   filled: true,
                   fillColor: isDark ? const Color(0xFF1E2433) : Colors.grey.shade100,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -149,13 +157,19 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
                     borderRadius: BorderRadius.circular(12),
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  tabs: [
-                    Tab(text: 'All (${all.length})'),
-                    Tab(text: '👨 Men (${men.length})'),
-                    Tab(text: '👩 Women (${women.length})'),
-                  ],
+                  unselectedLabelColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  labelStyle:
+                      const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  tabs: _hasGender
+                      ? [
+                          Tab(text: 'All (${all.length})'),
+                          Tab(text: '👨 Men (${men.length})'),
+                          Tab(text: '👩 Women (${women.length})'),
+                        ]
+                      : [
+                          Tab(text: '🌐 All (${all.length})'),
+                        ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -164,11 +178,15 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: [
-                    _buildVoiceList(all),
-                    _buildVoiceList(men),
-                    _buildVoiceList(women),
-                  ],
+                  children: _hasGender
+                      ? [
+                          _buildVoiceList(all, showGenderNote: false),
+                          _buildVoiceList(men, showGenderNote: true),
+                          _buildVoiceList(women, showGenderNote: true),
+                        ]
+                      : [
+                          _buildVoiceList(all, showGenderNote: false),
+                        ],
                 ),
               ),
             ],
@@ -178,7 +196,10 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
     );
   }
 
-  Widget _buildVoiceList(List<Map<String, String>> voices) {
+  Widget _buildVoiceList(
+    List<Map<String, String>> voices, {
+    required bool showGenderNote,
+  }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -187,7 +208,9 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.mic_off_rounded, size: 40, color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+            Icon(Icons.mic_off_rounded,
+                size: 40,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
             const SizedBox(height: 8),
             Text(
               'No matching voices found',
@@ -203,101 +226,157 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog> wit
 
     final currentVoiceName = widget.ttsService.selectedSystemVoice?['name'] ?? '';
 
-    return ListView.separated(
-      itemCount: voices.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final voice = voices[index];
-        final name = voice['name'] ?? 'Unnamed Voice';
-        final locale = voice['locale'] ?? '';
-        final isCurrent = currentVoiceName == name;
-
-        // Determine icon based on name
-        final nameLower = name.toLowerCase();
-        final isFemale = nameLower.contains('female') ||
-            nameLower.contains('woman') ||
-            nameLower.contains('zira') ||
-            nameLower.contains('jenny') ||
-            nameLower.contains('susan') ||
-            nameLower.contains('samantha');
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isCurrent
-                ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                : (isDark ? const Color(0xFF1E2433) : Colors.grey.shade50),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isCurrent
-                  ? theme.colorScheme.primary
-                  : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05)),
+    return Column(
+      children: [
+        // Info banner: Google TTS voices don't expose gender metadata
+        if (showGenderNote)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
             ),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            leading: CircleAvatar(
-              backgroundColor: isFemale
-                  ? Colors.pink.withValues(alpha: 0.18)
-                  : Colors.blue.withValues(alpha: 0.18),
-              child: Icon(
-                isFemale ? Icons.face_3_rounded : Icons.record_voice_over_rounded,
-                size: 20,
-                color: isFemale ? Colors.pink.shade400 : Colors.blue.shade400,
-              ),
-            ),
-            title: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                fontSize: 14,
-                color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-              ),
-            ),
-            subtitle: Text(
-              locale.isNotEmpty ? 'Locale: $locale' : 'System voice',
-              style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
               children: [
-                // Preview sound button
-                IconButton(
-                  tooltip: 'Preview this voice',
-                  icon: const Icon(Icons.play_circle_outline_rounded, size: 24),
-                  onPressed: () async {
-                    await widget.ttsService.setSystemVoice(voice);
-                    await widget.ttsService.speak("Hello! This is how I sound.");
-                  },
-                ),
-                // Select button
-                ElevatedButton(
-                  onPressed: () async {
-                    final navigator = Navigator.of(context);
-                    await widget.ttsService.setSystemVoice(voice);
-                    navigator.pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isCurrent ? theme.colorScheme.primary : null,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
+                const Icon(Icons.info_outline_rounded,
+                    size: 15, color: Colors.amber),
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    isCurrent ? 'Selected' : 'Use',
+                    'Most device voices don\'t expose gender data. Use ▶ Preview to hear each voice.',
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isCurrent ? Colors.white : null,
+                      fontSize: 11,
+                      color: Colors.amber.shade700,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+        Expanded(
+          child: ListView.separated(
+            itemCount: voices.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final voice = voices[index];
+              final name = voice['name'] ?? 'Unnamed Voice';
+              final locale = voice['locale'] ?? '';
+              final isCurrent = currentVoiceName == name;
+
+              final localeLower = locale.toLowerCase();
+              final nameLower = name.toLowerCase();
+              final isArabicVoice = localeLower.startsWith('ar') ||
+                  nameLower.contains('arabic') ||
+                  nameLower.contains('zeina') ||
+                  nameLower.contains('maged') ||
+                  nameLower.contains('tarik');
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: isCurrent
+                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                      : (isDark
+                          ? const Color(0xFF1E2433)
+                          : Colors.grey.shade50),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isCurrent
+                        ? theme.colorScheme.primary
+                        : (isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : Colors.black.withValues(alpha: 0.05)),
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  leading: CircleAvatar(
+                    backgroundColor: isArabicVoice
+                        ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                        : theme.colorScheme.primary.withValues(alpha: 0.15),
+                    child: Icon(
+                      isArabicVoice
+                          ? Icons.language_rounded
+                          : Icons.record_voice_over_rounded,
+                      size: 20,
+                      color: isArabicVoice
+                          ? const Color(0xFF10B981)
+                          : theme.colorScheme.primary,
+                    ),
+                  ),
+                  title: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight:
+                          isCurrent ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 14,
+                      color: isCurrent
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  subtitle: Text(
+                    locale.isNotEmpty ? 'Locale: $locale' : 'System voice',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.55)),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Preview this voice',
+                        icon: const Icon(
+                            Icons.play_circle_outline_rounded,
+                            size: 24),
+                        onPressed: () async {
+                          await widget.ttsService.setSystemVoice(voice);
+                          await widget.ttsService.speak(
+                            isArabicVoice
+                                ? 'مرحباً، هذا صوتي.'
+                                : 'Hello! This is how I sound.',
+                          );
+                        },
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          await widget.ttsService.setSystemVoice(voice);
+                          navigator.pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isCurrent
+                              ? theme.colorScheme.primary
+                              : null,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(
+                          isCurrent ? 'Selected' : 'Use',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isCurrent ? Colors.white : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
