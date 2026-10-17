@@ -4,7 +4,6 @@ import '../models/app_strings.dart';
 import '../models/voice_persona.dart';
 import '../services/tts_service.dart';
 import '../widgets/voice_persona_selector.dart';
-import '../theme/app_theme.dart';
 
 class TextInputTab extends StatefulWidget {
   final TextEditingController textController;
@@ -306,13 +305,19 @@ class _TextInputTabState extends State<TextInputTab> {
             child: ElevatedButton.icon(
               onPressed: widget.textController.text.trim().isEmpty ? null : widget.onTriggerSpeak,
               icon: Icon(
-                widget.ttsService.isPlaying ? Icons.pause_rounded : Icons.volume_up_rounded,
+                widget.ttsService.isPlaying
+                    ? Icons.pause_rounded
+                    : widget.ttsService.isPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.volume_up_rounded,
                 size: 22,
               ),
               label: Text(
                 widget.ttsService.isPlaying
                     ? strings.pausePlayback
-                    : strings.speakNowButton(
+                    : widget.ttsService.isPaused
+                        ? strings.resumePlayback
+                        : strings.speakNowButton(
                         widget.isArabic
                             ? widget.ttsService.currentPersona.nameArabic
                             : widget.ttsService.currentPersona.name,

@@ -177,31 +177,45 @@ class VoiceCatalogService {
     }
 
     if (bestMatch == null && persona.language != PersonaLanguage.arabic) {
+      // Never let an Arabic / non-English voice be picked for an English
+      // persona: the gender lists also contain unknown-gender system voices
+      // of every locale, and quality sorting can rank high-quality Arabic
+      // "Google" voices above English ones.
+      bool isEnglishVoice(Map<String, String> v) {
+        final localeLower = v['locale']!.toLowerCase();
+        final nameLower = v['name']!.toLowerCase();
+        return localeLower.startsWith('en') || nameLower.contains('english');
+      }
+
+      final englishFemale = _femaleVoices.where(isEnglishVoice).toList();
+      final englishMale = _maleVoices.where(isEnglishVoice).toList();
+
       if (persona.gender == VoiceGender.female) {
-        if (_femaleVoices.isNotEmpty) {
+        if (englishFemale.isNotEmpty) {
           for (var pref in persona.preferredSystemVoices) {
-            final match = _femaleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
+            final match = englishFemale.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
             if (match.isNotEmpty) {
               bestMatch = match.first;
               break;
             }
           }
-          bestMatch ??= _femaleVoices.first;
+          bestMatch ??= englishFemale.first;
         }
       } else if (persona.gender == VoiceGender.male) {
-        if (_maleVoices.isNotEmpty) {
+        if (englishMale.isNotEmpty) {
           for (var pref in persona.preferredSystemVoices) {
-            final match = _maleVoices.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
+            final match = englishMale.where((v) => v['name']!.toLowerCase().contains(pref.toLowerCase()));
             if (match.isNotEmpty) {
               bestMatch = match.first;
               break;
             }
           }
-          bestMatch ??= _maleVoices.first;
+          bestMatch ??= englishMale.first;
         }
       } else {
-        if (_allVoices.isNotEmpty) {
-          bestMatch = _allVoices.first;
+        final englishNeutral = _allVoices.where(isEnglishVoice).toList();
+        if (englishNeutral.isNotEmpty) {
+          bestMatch = englishNeutral.first;
         }
       }
     }

@@ -473,13 +473,19 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   child: ElevatedButton.icon(
                     onPressed: widget.textController.text.trim().isEmpty ? null : widget.onTriggerSpeak,
                     icon: Icon(
-                      widget.ttsService.isPlaying ? Icons.pause_rounded : Icons.record_voice_over_rounded,
+                      widget.ttsService.isPlaying
+                          ? Icons.pause_rounded
+                          : widget.ttsService.isPaused
+                              ? Icons.play_arrow_rounded
+                              : Icons.record_voice_over_rounded,
                       size: 20,
                     ),
                     label: Text(
                       widget.ttsService.isPlaying
                           ? strings.pausePlayback
-                          : strings.speakExtractedButton(
+                          : widget.ttsService.isPaused
+                              ? strings.resumePlayback
+                              : strings.speakExtractedButton(
                               widget.isArabic
                                   ? widget.ttsService.currentPersona.nameArabic
                                   : widget.ttsService.currentPersona.name,

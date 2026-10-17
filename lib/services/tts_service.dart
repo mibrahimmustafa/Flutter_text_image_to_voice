@@ -294,7 +294,10 @@ class TtsService extends ChangeNotifier {
 
     final hasArabic = isArabicString(text) || _currentPersona.language == PersonaLanguage.arabic;
 
-    if (hasArabic && _catalog.arabicVoices.isEmpty) {
+    // The cloud Arabic engine is a JS hook that only exists on the web.
+    // On native platforms we must fall through to FlutterTTS even when no
+    // Arabic voice is listed, otherwise nothing would play at all.
+    if (hasArabic && _catalog.arabicVoices.isEmpty && kIsWeb && _cloudArabicTts.isSupported) {
       _isUsingCloudArabicTts = true;
       _state = TtsPlaybackState.playing;
       notifyListeners();

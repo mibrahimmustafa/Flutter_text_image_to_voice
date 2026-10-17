@@ -71,6 +71,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _speakCurrentText({HistorySourceType source = HistorySourceType.textInput}) async {
+    // If audio is paused, tapping play should continue from where it stopped
+    // instead of restarting the whole text from the beginning.
+    if (_ttsService.isPaused) {
+      await _ttsService.resume();
+      return;
+    }
+
     final text = _currentActiveText.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
