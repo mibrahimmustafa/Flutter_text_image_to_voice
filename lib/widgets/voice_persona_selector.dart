@@ -57,7 +57,7 @@ class VoicePersonaSelector extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: personas.length,
-            separatorBuilder: (context, index) => const SizedBox(width: AppSizes.xl),
+            separatorBuilder: (context, index) => const SizedBox(width: AppSizes.lg),
             itemBuilder: (context, index) {
               final persona = personas[index];
               final isSelected = ttsService.currentPersona.id == persona.id;

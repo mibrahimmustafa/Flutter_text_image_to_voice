@@ -9,6 +9,7 @@ import '../models/preset_demo_photo.dart';
 import '../models/voice_persona.dart';
 import '../services/ocr_service.dart';
 import '../services/tts_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/preset_photo_carousel.dart';
 import '../widgets/voice_persona_card.dart';
 
@@ -184,7 +185,12 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
         : widget.textController.text.trim().split(RegExp(r'\s+')).length;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 200),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.screenPadding,
+        AppSizes.md,
+        AppSizes.screenPadding,
+        AppSizes.playerBarClearance,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -201,7 +207,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   onTap: () => _pickImage(ImageSource.camera),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSizes.lg),
               Expanded(
                 child: _buildActionButton(
                   context: context,
@@ -212,25 +218,25 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                   onTap: () => _pickImage(ImageSource.gallery),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSizes.lg),
               InkWell(
                 onTap: _pickFromFilePicker,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSizes.lg),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E2433) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                     border: Border.all(
                       color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
                     ),
                   ),
-                  child: const Icon(Icons.folder_open_rounded, size: 24),
+                  child: const Icon(Icons.folder_open_rounded, size: AppSizes.iconXl),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSizes.sectionGap),
 
           // Preset demo carousel for 1-tap testing
           PresetPhotoCarousel(
@@ -238,13 +244,13 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
             isArabic: widget.isArabic,
             onSelect: _loadPreset,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSizes.sectionGap),
 
           // Photo Preview (if photo selected)
           if (_selectedImageBytes != null) ...[
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXxl),
                 border: Border.all(
                   color: theme.colorScheme.primary.withValues(alpha: 0.4),
                   width: 1.5,
@@ -258,7 +264,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXxl - 1),
                 child: Stack(
                   children: [
                     Image.memory(
@@ -268,9 +274,9 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                       fit: BoxFit.cover,
                     ),
                     Positioned(
-                      top: 10,
-                      left: 10,
-                      right: 10,
+                      top: AppSizes.sm,
+                      left: AppSizes.sm,
+                      right: AppSizes.sm,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -299,7 +305,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                             onTap: _clearImageAndText,
                             borderRadius: BorderRadius.circular(20),
                             child: Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.all(AppSizes.sm),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.7),
                                 shape: BoxShape.circle,
@@ -342,11 +348,11 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
 
           // Voice Personas Selector
           _buildVoicePersonaSelector(context),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSizes.sectionGap),
 
           // Extracted Text Card & Editor
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSizes.cardInset),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF181D29) : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -435,7 +441,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSizes.fieldGap),
 
                 // Editable text box
                 TextField(
@@ -456,7 +462,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     ),
                     filled: true,
                     fillColor: isDark ? const Color(0xFF131722) : Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.all(14),
+                    contentPadding: const EdgeInsets.all(AppSizes.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide(
@@ -465,7 +471,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: AppSizes.lg),
 
                 // Speak with chosen voice CTA button
                 SizedBox(
@@ -498,7 +504,8 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: widget.ttsService.currentPersona.accentColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(0, AppSizes.minTouchTarget),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 3,
                     ),
@@ -507,7 +514,6 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
               ],
             ),
           ),
-          const SizedBox(height: 100),
         ],
       ),
     );
@@ -546,13 +552,13 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.sm),
         SizedBox(
-          height: 168,
+          height: AppSizes.personaCardHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: personas.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: AppSizes.lg),
             itemBuilder: (context, index) {
               final persona = personas[index];
               final isSelected = widget.ttsService.currentPersona.id == persona.id;
@@ -599,7 +605,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.all(AppSizes.lg),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E2433) : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -618,14 +624,14 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppSizes.md),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
               ),
               child: Icon(icon, color: color, size: 22),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

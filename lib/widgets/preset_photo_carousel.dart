@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/preset_demo_photo.dart';
+import '../theme/app_theme.dart';
 
 class PresetPhotoCarousel extends StatelessWidget {
   final ValueChanged<PresetDemoPhoto> onSelect;
@@ -51,22 +52,22 @@ class PresetPhotoCarousel extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.sm),
         SizedBox(
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: samples.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: AppSizes.md),
             itemBuilder: (context, index) {
               final preset = samples[index];
               final isSelected = selectedPresetId == preset.id;
 
               return InkWell(
                 onTap: () => onSelect(preset),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                 child: Container(
-                  width: 180,
+                  width: AppSizes.presetCardWidth,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
@@ -136,9 +137,9 @@ class PresetPhotoCarousel extends StatelessWidget {
                         ),
                         // Title and prompt
                         Positioned(
-                          bottom: 8,
-                          left: 10,
-                          right: 10,
+                          bottom: AppSizes.sm,
+                          left: AppSizes.md,
+                          right: AppSizes.md,
                           child: Column(
                             crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,

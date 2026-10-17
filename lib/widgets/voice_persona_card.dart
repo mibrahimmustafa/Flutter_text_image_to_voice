@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/voice_persona.dart';
+import '../theme/app_theme.dart';
 
 class VoicePersonaCard extends StatelessWidget {
   final VoicePersona persona;
@@ -49,8 +50,8 @@ class VoicePersonaCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        width: 175,
-        padding: const EdgeInsets.all(12),
+        width: AppSizes.personaCardWidth,
+        padding: const EdgeInsets.all(AppSizes.md),
         decoration: BoxDecoration(
           color: isSelected
               ? persona.accentColor.withValues(alpha: isDark ? 0.20 : 0.12)
@@ -144,29 +145,30 @@ class VoicePersonaCard extends StatelessWidget {
             // Action preview button
             InkWell(
               onTap: onPreview,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               child: Container(
+                constraints: const BoxConstraints(minHeight: 32),
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 5),
+                padding: const EdgeInsets.symmetric(vertical: AppSizes.sm),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? persona.accentColor
                       : theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.volume_up_rounded,
-                      size: 13,
+                      size: 14,
                       color: isSelected ? Colors.white : theme.colorScheme.onSurface,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.xs),
                     Text(
                       previewText,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isSelected ? Colors.white : theme.colorScheme.onSurface,
                       ),

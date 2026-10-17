@@ -87,7 +87,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.radiusLg),
+          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.lg + AppSizes.xs),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
