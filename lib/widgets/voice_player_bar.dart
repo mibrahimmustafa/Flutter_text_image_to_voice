@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/voice_persona.dart';
+import '../models/app_strings.dart';
 import '../services/tts_service.dart';
+import '../theme/app_theme.dart';
 import 'audio_visualizer.dart';
 import 'speed_scroll_selector.dart';
 import 'system_voice_browser_dialog.dart';
@@ -29,27 +31,51 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
   bool _showSpeedScroll = true;
 
   @override
+  void initState() {
+    super.initState();
+    widget.ttsService.addListener(_onServiceChanged);
+  }
+
+  @override
+  void didUpdateWidget(VoicePlayerBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ttsService != widget.ttsService) {
+      oldWidget.ttsService.removeListener(_onServiceChanged);
+      widget.ttsService.addListener(_onServiceChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.ttsService.removeListener(_onServiceChanged);
+    super.dispose();
+  }
+
+  void _onServiceChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final persona = widget.ttsService.currentPersona;
+    final strings = AppStrings(isArabic: widget.isArabic);
 
     final displayName = widget.ttsService.selectedSystemVoice?['name'] ??
         (widget.isArabic ? persona.nameArabic : persona.name);
     final displayTag = widget.isArabic ? persona.tagArabic : persona.tag;
-    final tapToChangeText = widget.isArabic ? 'اضغط للتغيير' : 'Tap to change';
-    final sayItText = widget.ttsService.isPlaying
-        ? (widget.isArabic ? 'إيقاف مؤقت' : 'Pause')
-        : (widget.isArabic ? 'انطق' : 'Say It');
+    
+    final sayItText = widget.ttsService.isPlaying ? strings.pause : strings.sayIt;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF131722) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        color: isDark ? AppColors.darkBg : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSizes.radiusRound)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-            blurRadius: 20,
+            blurRadius: AppSizes.radiusXxl,
             offset: const Offset(0, -6),
           ),
         ],
@@ -57,7 +83,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.radiusLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -70,7 +96,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                   isArabic: widget.isArabic,
                   onRateChanged: (v) => widget.ttsService.setRate(v),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSizes.lg),
               ],
 
               // Expandable fine tuning sliders
@@ -84,28 +110,26 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                   onVolumeChanged: (v) => widget.ttsService.setVolume(v),
                   onReset: () => widget.ttsService.applyPersona(widget.ttsService.currentPersona),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSizes.xl),
               ],
 
-              // Spoken word progress preview (if currently playing)
+              // Spoken word progress preview
               if (widget.ttsService.isPlaying && widget.ttsService.currentSpokenWord.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl, vertical: AppSizes.xs),
                   decoration: BoxDecoration(
                     color: persona.accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(AppSizes.lg),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.record_voice_over_rounded, size: 14, color: persona.accentColor),
-                      const SizedBox(width: 6),
+                      Icon(Icons.record_voice_over_rounded, size: AppSizes.iconLg, color: persona.accentColor),
+                      const SizedBox(width: AppSizes.sm),
                       Text(
-                        widget.isArabic
-                            ? 'يتم نطق: "${widget.ttsService.currentSpokenWord}"'
-                            : 'Speaking: "${widget.ttsService.currentSpokenWord}"',
+                        strings.speakingWord(widget.ttsService.currentSpokenWord),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppSizes.fontBase,
                           fontWeight: FontWeight.bold,
                           color: persona.accentColor,
                         ),
@@ -113,7 +137,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSizes.md),
               ],
 
               // Wave visualizer
@@ -121,15 +145,14 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                 isPlaying: widget.ttsService.isPlaying,
                 isPaused: widget.ttsService.isPaused,
                 activeColor: persona.accentColor,
-                height: 32,
+                height: AppSizes.audioVisualizerH,
                 barCount: 28,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.lg),
 
               // Control Bar Row
               Row(
                 children: [
-                  // Active Voice Persona / Custom Voice info button
                   Expanded(
                     child: InkWell(
                       onTap: () {
@@ -138,12 +161,12 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                           builder: (c) => SystemVoiceBrowserDialog(ttsService: widget.ttsService),
                         );
                       },
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.md),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E2433) : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(14),
+                          color: isDark ? AppColors.darkCard : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                           border: Border.all(
                             color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
                           ),
@@ -151,46 +174,31 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              radius: 16,
+                              radius: AppSizes.personaAvatarRadius,
                               backgroundColor: persona.accentColor.withValues(alpha: 0.2),
-                              child: Icon(persona.icon, size: 16, color: persona.accentColor),
+                              child: Icon(persona.icon, size: AppSizes.iconSm, color: persona.accentColor),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSizes.md),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          displayName,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        persona.gender == VoiceGender.male
-                                            ? '👨'
-                                            : persona.gender == VoiceGender.female
-                                                ? '👩'
-                                                : '🤖',
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                    ],
+                                  Text(
+                                    '$displayName ${persona.gender == VoiceGender.male ? '👨' : persona.gender == VoiceGender.female ? '👩' : '🤖'}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: AppSizes.fontMdLg,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
-                                    '$displayTag • $tapToChangeText',
+                                    '$displayTag • ${strings.tapToChange}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: AppSizes.fontSm,
                                       color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                                     ),
                                   ),
@@ -199,7 +207,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                             ),
                             Icon(
                               Icons.keyboard_arrow_up_rounded,
-                              size: 18,
+                              size: AppSizes.iconMd,
                               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ],
@@ -207,21 +215,20 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.md),
 
-                  // Speed Scroll Toggle Button
                   InkWell(
                     onTap: () {
                       setState(() => _showSpeedScroll = !_showSpeedScroll);
                     },
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.md),
                       decoration: BoxDecoration(
                         color: _showSpeedScroll
                             ? persona.accentColor.withValues(alpha: 0.18)
-                            : (isDark ? const Color(0xFF1E2433) : Colors.grey.shade100),
-                        borderRadius: BorderRadius.circular(12),
+                            : (isDark ? AppColors.darkCard : Colors.grey.shade100),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                         border: Border.all(
                           color: _showSpeedScroll
                               ? persona.accentColor
@@ -229,17 +236,18 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                         ),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.speed_rounded,
-                            size: 16,
+                            size: AppSizes.iconSm,
                             color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.xs),
                           Text(
                             '${widget.ttsService.rate.toStringAsFixed(2)}x',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppSizes.fontBase,
                               fontWeight: FontWeight.bold,
                               color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
                             ),
@@ -248,11 +256,10 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.sm),
 
-                  // Fine tune toggle button
                   IconButton(
-                    tooltip: widget.isArabic ? 'ضبط النبرة والسرعة' : 'Adjust Pitch & Speed',
+                    tooltip: strings.adjustPitch,
                     icon: Icon(
                       Icons.tune_rounded,
                       color: _showFineTuning ? theme.colorScheme.primary : theme.colorScheme.onSurface,
@@ -260,28 +267,26 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                     style: IconButton.styleFrom(
                       backgroundColor: _showFineTuning
                           ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                          : (isDark ? const Color(0xFF1E2433) : Colors.grey.shade100),
+                          : (isDark ? AppColors.darkCard : Colors.grey.shade100),
                     ),
                     onPressed: () {
                       setState(() => _showFineTuning = !_showFineTuning);
                     },
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.sm),
 
-                  // Stop button (if playing or paused)
                   if (widget.ttsService.isPlaying || widget.ttsService.isPaused) ...[
                     IconButton(
-                      tooltip: widget.isArabic ? 'إيقاف' : 'Stop',
-                      icon: const Icon(Icons.stop_rounded, color: Colors.redAccent),
+                      tooltip: strings.stop,
+                      icon: const Icon(Icons.stop_rounded, color: AppColors.stop),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.redAccent.withValues(alpha: 0.15),
+                        backgroundColor: AppColors.stop.withValues(alpha: 0.15),
                       ),
                       onPressed: () => widget.ttsService.stop(),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSizes.sm),
                   ],
 
-                  // Play / Pause Master FAB
                   InkWell(
                     onTap: () {
                       if (widget.ttsService.isPlaying) {
@@ -294,9 +299,9 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                         }
                       }
                     },
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXxl),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSizes.iconMd, vertical: AppSizes.xl),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -304,11 +309,11 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                             persona.accentColor.withValues(alpha: 0.8),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusXxl),
                         boxShadow: [
                           BoxShadow(
                             color: persona.accentColor.withValues(alpha: 0.4),
-                            blurRadius: 12,
+                            blurRadius: AppSizes.radiusMd,
                             offset: const Offset(0, 4),
                           ),
                         ],
@@ -320,15 +325,15 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
                                 ? Icons.pause_rounded
                                 : Icons.play_arrow_rounded,
                             color: Colors.white,
-                            size: 20,
+                            size: AppSizes.iconLg,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: AppSizes.xs),
                           Text(
                             sayItText,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                              fontSize: AppSizes.fontMdLg,
                             ),
                           ),
                         ],

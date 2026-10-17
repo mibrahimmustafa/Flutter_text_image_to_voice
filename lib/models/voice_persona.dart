@@ -44,6 +44,17 @@ class VoicePersona {
     this.preferredSystemVoices = const [],
   });
 
+  String getPreviewText({required bool isArabic}) {
+    if (isArabic) {
+      return gender == VoiceGender.male
+          ? 'مرحباً، أنا $nameArabic. جاهز لقراءة نصوصك بصوت رجالي عربي.'
+          : 'أهلاً، أنا $nameArabic. جاهزة لنطق كتاباتك بصوت نسائي عربي فصيح.';
+    }
+    return gender == VoiceGender.male
+        ? "Hi, I'm $name. Ready to speak your text with a masculine tone."
+        : "Hello, I am $name. Ready to read your text with an expressive feminine voice.";
+  }
+
   static const List<VoicePersona> englishPersonas = [
     // --- MEN VOICES ---
     VoicePersona(
