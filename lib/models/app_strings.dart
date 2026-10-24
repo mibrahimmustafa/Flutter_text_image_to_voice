@@ -58,6 +58,7 @@ class AppStrings {
   String get stop => isArabic ? 'إيقاف' : 'Stop';
   String get sayIt => isArabic ? 'انطق' : 'Say It';
   String get pause => isArabic ? 'إيقاف مؤقت' : 'Pause';
+  String get resumePlayback => isArabic ? 'متابعة' : 'Resume';
 
   // Gender
   String get man => isArabic ? 'رجل' : 'Man';
@@ -84,5 +85,5 @@ class AppStrings {
       ? '$words كلمة • $chars حرف'
       : '$words words • $chars chars';
   String audioTimeLabel(int seconds) =>
-      isArabic ? '~${seconds}ث تسجيل' : '~${seconds}s audio';
+      isArabic ? '~$secondsث تسجيل' : '~$seconds s audio';
 }

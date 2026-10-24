@@ -66,7 +66,11 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
         (widget.isArabic ? persona.nameArabic : persona.name);
     final displayTag = widget.isArabic ? persona.tagArabic : persona.tag;
     
-    final sayItText = widget.ttsService.isPlaying ? strings.pause : strings.sayIt;
+    final sayItText = widget.ttsService.isPlaying
+        ? strings.pause
+        : widget.ttsService.isPaused
+            ? strings.resumePlayback
+            : strings.sayIt;
 
     return Container(
       decoration: BoxDecoration(
@@ -83,7 +87,7 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.radiusLg),
+          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.lg + AppSizes.xs),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class SpeedPreset {
   final double rate;
@@ -94,7 +95,7 @@ class SpeedScrollSelector extends StatelessWidget {
 
         // Horizontal Scrollable Speed Presets Dial
         SizedBox(
-          height: 38,
+          height: AppSizes.xxl + AppSizes.lg, // 40 — 4pt grid
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: SpeedPreset.presets.length,

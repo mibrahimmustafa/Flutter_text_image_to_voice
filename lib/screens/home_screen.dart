@@ -3,6 +3,7 @@ import '../models/app_strings.dart';
 import '../models/speech_history_item.dart';
 import '../models/voice_persona.dart';
 import '../services/tts_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/history_bottom_sheet.dart';
 import '../widgets/system_voice_browser_dialog.dart';
 import '../widgets/voice_player_bar.dart';
@@ -71,6 +72,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _speakCurrentText({HistorySourceType source = HistorySourceType.textInput}) async {
+    // If audio is paused, tapping play should continue from where it stopped
+    // instead of restarting the whole text from the beginning.
+    if (_ttsService.isPaused) {
+      await _ttsService.resume();
+      return;
+    }
+
     final text = _currentActiveText.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -289,8 +297,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(56),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              padding: const EdgeInsets.all(4),
+              margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
+              padding: const EdgeInsets.all(AppSizes.xs),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E2433) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(16),

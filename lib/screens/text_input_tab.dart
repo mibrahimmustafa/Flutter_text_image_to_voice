@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import '../models/app_strings.dart';
 import '../models/voice_persona.dart';
 import '../services/tts_service.dart';
-import '../widgets/voice_persona_selector.dart';
 import '../theme/app_theme.dart';
+import '../widgets/voice_persona_selector.dart';
 
 class TextInputTab extends StatefulWidget {
   final TextEditingController textController;
@@ -114,7 +114,12 @@ class _TextInputTabState extends State<TextInputTab> {
     final readingTimeSeconds = (wordCount / 2.5).ceil();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 200),
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.screenPadding,
+        AppSizes.md,
+        AppSizes.screenPadding,
+        AppSizes.playerBarClearance,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -167,11 +172,11 @@ class _TextInputTabState extends State<TextInputTab> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSizes.sectionGap),
 
           // Main Text Editor Box
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSizes.cardInset),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF181D29) : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -226,7 +231,7 @@ class _TextInputTabState extends State<TextInputTab> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSizes.sm),
 
                 // Text Input Area
                 TextField(
@@ -256,7 +261,7 @@ class _TextInputTabState extends State<TextInputTab> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSizes.lg),
 
                 // Stats Bar
                 Row(
@@ -291,7 +296,7 @@ class _TextInputTabState extends State<TextInputTab> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSizes.sectionGap),
 
           // Voice Persona Selection Section
           VoicePersonaSelector(
@@ -306,13 +311,19 @@ class _TextInputTabState extends State<TextInputTab> {
             child: ElevatedButton.icon(
               onPressed: widget.textController.text.trim().isEmpty ? null : widget.onTriggerSpeak,
               icon: Icon(
-                widget.ttsService.isPlaying ? Icons.pause_rounded : Icons.volume_up_rounded,
+                widget.ttsService.isPlaying
+                    ? Icons.pause_rounded
+                    : widget.ttsService.isPaused
+                        ? Icons.play_arrow_rounded
+                        : Icons.volume_up_rounded,
                 size: 22,
               ),
               label: Text(
                 widget.ttsService.isPlaying
                     ? strings.pausePlayback
-                    : strings.speakNowButton(
+                    : widget.ttsService.isPaused
+                        ? strings.resumePlayback
+                        : strings.speakNowButton(
                         widget.isArabic
                             ? widget.ttsService.currentPersona.nameArabic
                             : widget.ttsService.currentPersona.name,
@@ -326,12 +337,12 @@ class _TextInputTabState extends State<TextInputTab> {
                 backgroundColor: widget.ttsService.currentPersona.accentColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                minimumSize: const Size(0, AppSizes.minTouchTarget),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
               ),
             ),
           ),
-          const SizedBox(height: 100),
         ],
       ),
     );
